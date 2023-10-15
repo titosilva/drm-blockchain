@@ -9,8 +9,8 @@ import (
 var _ group.Elem[BigIntModG] = BigIntModG{}
 
 type BigIntModG struct {
-	value *big.Int
-	mod   *big.Int
+	Value *big.Int
+	Mod   *big.Int
 }
 
 func mod(x *big.Int, y *big.Int) *big.Int {
@@ -34,35 +34,36 @@ func subMod(x *big.Int, y *big.Int, m *big.Int) *big.Int {
 }
 
 func FromInt64(v int64, m int64) group.Elem[BigIntModG] {
+	bmod := big.NewInt(m)
 	return BigIntModG{
-		value: big.NewInt(v),
-		mod:   big.NewInt(m),
+		Value: mod(big.NewInt(v), bmod),
+		Mod:   bmod,
 	}
 }
 
 func FromBigInt(v *big.Int, m *big.Int) group.Elem[BigIntModG] {
 	return BigIntModG{
-		value: v,
-		mod:   m,
+		Value: v,
+		Mod:   m,
 	}
 }
 
 func (x BigIntModG) CombineWith(y group.Elem[BigIntModG]) group.Elem[BigIntModG] {
 	return BigIntModG{
-		value: addMod(x.value, y.AsPure().value, x.mod),
-		mod:   x.mod,
+		Value: addMod(x.Value, y.AsPure().Value, x.Mod),
+		Mod:   x.Mod,
 	}
 }
 
 func (x BigIntModG) Invert() group.Elem[BigIntModG] {
 	return BigIntModG{
-		value: subMod(x.mod, x.value, x.mod),
-		mod:   x.mod,
+		Value: subMod(x.Mod, x.Value, x.Mod),
+		Mod:   x.Mod,
 	}
 }
 
 func (x BigIntModG) EqualsTo(y group.Elem[BigIntModG]) bool {
-	return x.value.Cmp(y.AsPure().value) == 0
+	return x.Value.Cmp(y.AsPure().Value) == 0
 }
 
 func (x BigIntModG) AsPure() BigIntModG {
