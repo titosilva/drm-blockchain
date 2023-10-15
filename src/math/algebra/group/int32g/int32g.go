@@ -13,10 +13,6 @@ func Zero() group.Elem[Int32G] {
 	return Int32G{value: 0}
 }
 
-func (Int32G) Zero() group.Elem[Int32G] {
-	return Zero()
-}
-
 func From(v int32) group.Elem[Int32G] {
 	return Int32G{value: v}
 }
@@ -25,6 +21,10 @@ func (x Int32G) CombineWith(y group.Elem[Int32G]) group.Elem[Int32G] {
 	return Int32G{
 		value: x.value + y.AsPure().value,
 	}
+}
+
+func (x Int32G) EqualsTo(y group.Elem[Int32G]) bool {
+	return x == y
 }
 
 func (x Int32G) Invert() group.Elem[Int32G] {
