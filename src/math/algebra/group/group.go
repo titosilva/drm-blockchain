@@ -5,6 +5,7 @@ type Elem[G any] interface {
 	CombineWith(a Elem[G]) Elem[G]
 	Invert() Elem[G]
 	EqualsTo(a Elem[G]) bool
+	Zero() Elem[G]
 	AsPure() G
 	AsGroup() Elem[G]
 }

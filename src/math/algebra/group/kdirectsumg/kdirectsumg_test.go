@@ -1,14 +1,16 @@
 package kdirectsumg_test
 
 import (
+	"drm-blockchain/src/math/algebra/group"
 	"drm-blockchain/src/math/algebra/group/bigintmodg"
 	"drm-blockchain/src/math/algebra/group/kdirectsumg"
 	"testing"
 )
 
 func Test__KDirectSumGCombine__Should__CombineAllEntriesCorrectly(t *testing.T) {
-	kds1 := kdirectsumg.New[bigintmodg.BigIntModG](3)
-	kds2 := kdirectsumg.New[bigintmodg.BigIntModG](3)
+	z := bigintmodg.FromInt64(0, 10)
+	kds1 := kdirectsumg.New[bigintmodg.BigIntModG](3, func(i int) group.Elem[bigintmodg.BigIntModG] { return z })
+	kds2 := kdirectsumg.New[bigintmodg.BigIntModG](3, func(i int) group.Elem[bigintmodg.BigIntModG] { return z })
 
 	iter1 := kds1.Entries.GetIterator()
 	var agg int64 = 9

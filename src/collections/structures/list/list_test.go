@@ -134,3 +134,17 @@ func Test__ListIterator__Should__AllowEditsInList(t *testing.T) {
 		odd += 2
 	}
 }
+
+func Test__List__Skip__and__Take(t *testing.T) {
+	l := list.NewWithSize[int](50, func(i int) int { return i * i })
+
+	less_than_25 := func(x int) bool { return x < 25 }
+	if l.Skip(5).Any(less_than_25) {
+		t.Error("Expected to have no squares less than 25")
+	}
+
+	greater_than_100 := func(x int) bool { return x > 100 }
+	if l.Take(10).Any(greater_than_100) {
+		t.Error("Expected to have no squares greater than 100")
+	}
+}

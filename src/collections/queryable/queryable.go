@@ -13,4 +13,7 @@ type Queryable[T any] interface {
 	Any(pred Predicate[T]) bool
 	Where(pred Predicate[T]) Queryable[T]
 	First() maybe.Maybe[T]
+
+	Skip(offset int) Queryable[T]
+	Take(count int) Queryable[T]
 }

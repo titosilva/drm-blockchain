@@ -13,6 +13,10 @@ func Zero() group.Elem[Int32G] {
 	return Int32G{value: 0}
 }
 
+func (x Int32G) Zero() group.Elem[Int32G] {
+	return Zero()
+}
+
 func From(v int32) group.Elem[Int32G] {
 	return Int32G{value: v}
 }

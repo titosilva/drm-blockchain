@@ -41,9 +41,13 @@ func FromInt64(v int64, m int64) group.Elem[BigIntModG] {
 	}
 }
 
+func FromBytes(v []byte, m *big.Int) group.Elem[BigIntModG] {
+	return FromBigInt((&big.Int{}).SetBytes(v), m)
+}
+
 func FromBigInt(v *big.Int, m *big.Int) group.Elem[BigIntModG] {
 	return BigIntModG{
-		Value: v,
+		Value: mod(v, m),
 		Mod:   m,
 	}
 }
@@ -53,6 +57,10 @@ func (x BigIntModG) CombineWith(y group.Elem[BigIntModG]) group.Elem[BigIntModG]
 		Value: addMod(x.Value, y.AsPure().Value, x.Mod),
 		Mod:   x.Mod,
 	}
+}
+
+func (x BigIntModG) Zero() group.Elem[BigIntModG] {
+	return FromBigInt(big.NewInt(0), x.Mod)
 }
 
 func (x BigIntModG) Invert() group.Elem[BigIntModG] {

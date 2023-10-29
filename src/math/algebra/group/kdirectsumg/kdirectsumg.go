@@ -14,10 +14,10 @@ type KDirectSumG[X any] struct {
 	Entries list.List[group.Elem[X]]
 }
 
-func New[X any](k int) KDirectSumG[X] {
+func New[X any](k int, fill func(i int) group.Elem[X]) KDirectSumG[X] {
 	return KDirectSumG[X]{
 		k:       k,
-		Entries: list.NewWithSize[group.Elem[X]](k),
+		Entries: list.NewWithSize[group.Elem[X]](k, fill),
 	}
 }
 
@@ -26,7 +26,7 @@ func (x KDirectSumG[G]) CombineWith(y group.Elem[KDirectSumG[G]]) group.Elem[KDi
 		panic("Can't combine KDirectSum with different k")
 	}
 
-	r := New[G](x.k)
+	r := New[G](x.k, func(i int) group.Elem[G] { return x.Entries.ToArray()[0].Zero() })
 	r_iter := r.Entries.GetIterator()
 	x_iter := x.Entries.GetIterator()
 	y_iter := y.AsPure().Entries.GetIterator()
@@ -43,7 +43,7 @@ func (x KDirectSumG[G]) CombineWith(y group.Elem[KDirectSumG[G]]) group.Elem[KDi
 }
 
 func (x KDirectSumG[G]) Invert() group.Elem[KDirectSumG[G]] {
-	r := New[G](x.k)
+	r := New[G](x.k, func(i int) group.Elem[G] { return x.Entries.ToArray()[0].Zero() })
 	x_iter := x.Entries.GetIterator()
 
 	for x_iter.HasNext() {
@@ -52,6 +52,18 @@ func (x KDirectSumG[G]) Invert() group.Elem[KDirectSumG[G]] {
 	}
 
 	return r
+}
+
+func (x KDirectSumG[G]) Zero() group.Elem[KDirectSumG[G]] {
+	z := New[G](x.k, func(i int) group.Elem[G] { return x.Entries.ToArray()[0].Zero() })
+
+	z_iter := z.Entries.GetIterator()
+
+	for z_iter.HasNext() {
+		*(z_iter.GetNext()) = x.AsPure().Entries.ToArray()[0].Zero()
+	}
+
+	return z
 }
 
 func (x KDirectSumG[G]) EqualsTo(y group.Elem[KDirectSumG[G]]) bool {

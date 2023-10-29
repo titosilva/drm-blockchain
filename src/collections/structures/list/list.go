@@ -23,15 +23,27 @@ func (l *List[T]) Add(elem T) {
 	l.values = append(l.values, elem)
 }
 
-func NewWithSize[T any](size int) List[T] {
-	return List[T]{
-		values: make([]T, size),
+func NewWithSize[T any](size int, fill func(int) T) List[T] {
+	l := List[T]{
+		values: make([]T, 0),
 	}
+
+	for i := 0; i < size; i++ {
+		l.values = append(l.values, fill(i))
+	}
+
+	return l
 }
 
 func New[T any]() List[T] {
 	return List[T]{
 		values: make([]T, 0),
+	}
+}
+
+func NewFrom[T any](elems []T) List[T] {
+	return List[T]{
+		values: elems,
 	}
 }
 
@@ -101,4 +113,20 @@ func (l List[T]) Where(pred queryable.Predicate[T]) queryable.Queryable[T] {
 	}
 
 	return r
+}
+
+func (l List[T]) Skip(offset int) queryable.Queryable[T] {
+	if offset >= l.Count() {
+		return NewFrom(make([]T, 0))
+	}
+
+	return NewFrom(l.values[offset:l.Count()])
+}
+
+func (l List[T]) Take(count int) queryable.Queryable[T] {
+	if count >= l.Count() {
+		return l
+	}
+
+	return NewFrom(l.values[0:count])
 }

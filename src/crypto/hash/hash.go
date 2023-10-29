@@ -1,5 +1,12 @@
 package hash
 
-func Test(a string) string {
-	return a
+type HashAlgorithm interface {
+	ComputeDigest(bytes []byte)
+	GetDigest() []byte
+}
+
+type HomHashAlgorithm interface {
+	HashAlgorithm
+	Add(bytes []byte)
+	Remove(bytes []byte)
 }

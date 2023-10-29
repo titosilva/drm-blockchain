@@ -22,6 +22,10 @@ func (x BigIntG) CombineWith(y group.Elem[BigIntG]) group.Elem[BigIntG] {
 	}
 }
 
+func (x BigIntG) Zero() group.Elem[BigIntG] {
+	return From(0)
+}
+
 func (x BigIntG) EqualsTo(y group.Elem[BigIntG]) bool {
 	return x.value.Cmp(y.AsPure().value) == 0
 }
