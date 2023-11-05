@@ -45,10 +45,13 @@ func (x KDirectSumG[G]) CombineWith(y group.Elem[KDirectSumG[G]]) group.Elem[KDi
 func (x KDirectSumG[G]) Invert() group.Elem[KDirectSumG[G]] {
 	r := New[G](x.k, func(i int) group.Elem[G] { return x.Entries.ToArray()[0].Zero() })
 	x_iter := x.Entries.GetIterator()
+	r_iter := r.Entries.GetIterator()
 
-	for x_iter.HasNext() {
+	for x_iter.HasNext() && r_iter.HasNext() {
 		xi := *(x_iter.GetNext())
-		r.Entries.Add(xi.Invert())
+		ri := r_iter.GetNext()
+
+		*ri = xi.Invert()
 	}
 
 	return r

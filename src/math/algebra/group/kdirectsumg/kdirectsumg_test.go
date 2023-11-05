@@ -40,3 +40,21 @@ func Test__KDirectSumGCombine__Should__CombineAllEntriesCorrectly(t *testing.T) 
 		agg += 7
 	}
 }
+
+func Test__KDirectSumGInvert__Should__Cancel(t *testing.T) {
+	z := bigintmodg.FromInt64(0, 10)
+	kds1 := kdirectsumg.New[bigintmodg.BigIntModG](3, func(i int) group.Elem[bigintmodg.BigIntModG] { return z })
+
+	iter1 := kds1.Entries.GetIterator()
+	var agg int64 = 9
+	for iter1.HasNext() {
+		*iter1.GetNext() = bigintmodg.FromInt64(agg, 10)
+		agg += 4
+	}
+
+	kds2 := kds1.Invert()
+
+	if !kds2.CombineWith(kds1).EqualsTo(kds1.Zero()) {
+		t.Error("Expected to get zero")
+	}
+}

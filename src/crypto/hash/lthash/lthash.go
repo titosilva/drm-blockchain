@@ -23,12 +23,12 @@ func newOpGroup(k int, mod *big.Int) opGroup {
 }
 
 type LtHash struct {
-	state      opGroup
-	mod        *big.Int
-	k          int
-	p_bits     int
-	block_size int
-	xof        blake2b.XOF
+	state            opGroup
+	mod              *big.Int
+	k                int
+	p_bits           int
+	block_size_bytes int
+	xof              blake2b.XOF
 }
 
 func buildMask(p_bits int) *big.Int {
@@ -38,7 +38,7 @@ func buildMask(p_bits int) *big.Int {
 	)
 }
 
-func New(k int, p_bits int, block_size int, key []byte) LtHash {
+func New(k int, p_bits int, block_size_bytes int, key []byte) LtHash {
 	xof, err := blake2b.NewXOF(uint32(k*p_bits), key)
 	if err != nil {
 		panic(err)
@@ -46,12 +46,12 @@ func New(k int, p_bits int, block_size int, key []byte) LtHash {
 	mask := buildMask(p_bits)
 
 	return LtHash{
-		state:      newOpGroup(k, mask),
-		mod:        mask,
-		k:          k,
-		p_bits:     p_bits,
-		block_size: block_size,
-		xof:        xof,
+		state:            newOpGroup(k, mask),
+		mod:              mask,
+		k:                k,
+		p_bits:           p_bits,
+		block_size_bytes: block_size_bytes,
+		xof:              xof,
 	}
 }
 
@@ -84,11 +84,19 @@ func combine(a1 opGroup, a2 opGroup) opGroup {
 }
 
 func (hash *LtHash) Add(bytes []byte) {
-	hash.state = combine(hash.state, hash.randomize(bytes))
+	hash.Combine(hash.randomize(bytes))
+}
+
+func (hash *LtHash) Combine(elem opGroup) {
+	hash.state = combine(hash.state, elem)
 }
 
 func (hash *LtHash) Remove(bytes []byte) {
 	hash.state = combine(hash.state, hash.randomize(bytes).Invert())
+}
+
+func (hash LtHash) GetState() opGroup {
+	return hash.state
 }
 
 func (hash *LtHash) ComputeDigest(bytes []byte) {
@@ -97,7 +105,7 @@ func (hash *LtHash) ComputeDigest(bytes []byte) {
 	l := list.NewFrom(bytes)
 
 	for offset < len(bytes) {
-		part := l.Skip(offset).Take(hash.block_size).ToArray()
+		part := l.Skip(offset).Take(hash.block_size_bytes).ToArray()
 		hash.Add(part)
 		offset += len(part)
 	}
