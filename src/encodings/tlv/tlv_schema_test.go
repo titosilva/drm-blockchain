@@ -100,12 +100,8 @@ func Test__GetTLVSchema__Should__ReturnStructTypeWithSubChildren__WhenProvidedAS
 
 func Test__GetTLVSchema__Should__ReturnArrayStructTypeWithChildren__WhenProvidedAnArray(t *testing.T) {
 	arr := [2]STest{
-		STest{
-			value: 1,
-		},
-		STest{
-			value: 4,
-		},
+		{value: 1},
+		{value: 4},
 	}
 	s, err := tlv.BuildTLVSchema(arr)
 
