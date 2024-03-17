@@ -97,3 +97,35 @@ func Test__GetTLVSchema__Should__ReturnStructTypeWithSubChildren__WhenProvidedAS
 		t.Errorf("Expected TLV schema with value 123, but received other")
 	}
 }
+
+func Test__GetTLVSchema__Should__ReturnArrayStructTypeWithChildren__WhenProvidedAnArray(t *testing.T) {
+	arr := [2]STest{
+		STest{
+			value: 1,
+		},
+		STest{
+			value: 4,
+		},
+	}
+	s, err := tlv.BuildTLVSchema(arr)
+
+	if err != nil {
+		t.Error("Unexpected error while building TLV schema")
+	}
+
+	if s.Type != tlv.TLVSchemaArray {
+		t.Errorf("Expected TLV schema type Array, but received other")
+	}
+
+	if len(s.Children) != 2 {
+		t.Errorf("Expected exactly one children, got %d", len(s.Children))
+	}
+
+	if s.Children[0].Type != tlv.TLVSchemaObject {
+		t.Errorf("Expected TLV schema type Int on struct child, but received other")
+	}
+
+	if binary.LittleEndian.Uint32(s.Children[0].Children[0].LEBytes) != 1 {
+		t.Errorf("Expected TLV schema with value 1, but received other")
+	}
+}

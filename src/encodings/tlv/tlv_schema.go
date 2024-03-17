@@ -36,13 +36,25 @@ func buildTLVSchema(stv reflect.Value) (schema TLVSchema, err error) {
 		return schema, err
 	}
 
-	if stv.Kind() == reflect.Struct {
+	stk := stv.Kind()
+
+	if stk == reflect.Struct {
 		schema.Children = make([]TLVSchema, stv.NumField())
 
 		for i := 0; i < stv.NumField(); i++ {
 			f := stv.Field(i)
 			fchild, _ := buildTLVSchema(f)
 			schema.Children[i] = fchild
+		}
+	}
+
+	if stk == reflect.Array || stk == reflect.Slice {
+		schema.Children = make([]TLVSchema, stv.Len())
+
+		for i := 0; i < stv.Len(); i++ {
+			e := stv.Index(i)
+			echild, _ := buildTLVSchema(e)
+			schema.Children[i] = echild
 		}
 	}
 
@@ -55,6 +67,8 @@ func getTLVSchemaTypeAndBytes(t reflect.Value) (tlvType uint8, bs []byte, err er
 		tlvType, bs = getTLVInt32(t)
 	case reflect.Struct:
 		tlvType = TLVSchemaObject
+	case reflect.Array:
+		tlvType = TLVSchemaArray
 	default:
 		err = errorutils.Newf("Cannot convert kind %d to TLVSchemaType", t.Kind())
 	}
