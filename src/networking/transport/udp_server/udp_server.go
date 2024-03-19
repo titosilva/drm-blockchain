@@ -1,7 +1,5 @@
 package udpserver
 
-// TODO: would we get any advantages by using Multicast UDP?
-
 import (
 	udppacket "drm-blockchain/src/networking/transport"
 	errorutils "drm-blockchain/src/utils/error"
