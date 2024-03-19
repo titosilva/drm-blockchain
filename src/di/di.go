@@ -6,112 +6,130 @@ import (
 )
 
 type DIContext struct {
-	Instances          map[reflect.Type]any
-	Factories          map[reflect.Type]any
-	InterfaceInstances map[reflect.Type]any
-	InterfaceFactories map[reflect.Type]any
+	SingletonInstances map[string]any
+	SingletonFactories map[string]any
+	Factories          map[string]any
+
+	InterfaceSingletonInstances map[string]any
+	InterfaceSingletonFactories map[string]any
+	InterfaceFactories          map[string]any
 }
 
 func NewContext() *DIContext {
 	ctx := new(DIContext)
-	ctx.Instances = make(map[reflect.Type]any)
-	ctx.Factories = make(map[reflect.Type]any)
+	ctx.SingletonInstances = make(map[string]any)
+	ctx.SingletonFactories = make(map[string]any)
+	ctx.Factories = make(map[string]any)
+
+	ctx.InterfaceSingletonInstances = make(map[string]any)
+	ctx.InterfaceSingletonFactories = make(map[string]any)
+	ctx.InterfaceFactories = make(map[string]any)
 	return ctx
 }
 
-func ensureInitialized(provider *DIContext) {
-	if provider.Instances == nil {
-		provider.Instances = make(map[reflect.Type]any)
-	}
-
-	if provider.InterfaceInstances == nil {
-		provider.InterfaceInstances = make(map[reflect.Type]any)
-	}
-
-	if provider.Factories == nil {
-		provider.Factories = make(map[reflect.Type]any)
-	}
-
-	if provider.InterfaceFactories == nil {
-		provider.InterfaceFactories = make(map[reflect.Type]any)
-	}
+func AddSingleton[T any](provider *DIContext, factory func(*DIContext) *T) {
+	tName := getTypeName[T]()
+	provider.SingletonFactories[tName] = factory
 }
 
-func AddSingleton[T any](provider *DIContext, instance *T) {
-	ensureInitialized(provider)
-	tType := reflect.TypeOf([0]T{}).Elem()
-	provider.Instances[tType] = instance
-}
-
-func AddInterfaceSingleton[T any](provider *DIContext, instance T) {
-	ensureInitialized(provider)
-	tType := reflect.TypeOf([0]T{}).Elem()
-	provider.InterfaceInstances[tType] = instance
+func AddInterfaceSingleton[T any](provider *DIContext, factory func(*DIContext) T) {
+	tName := getTypeName[T]()
+	provider.InterfaceSingletonFactories[tName] = factory
 }
 
 func AddFactory[T any](provider *DIContext, factory func(*DIContext) *T) {
-	ensureInitialized(provider)
-	tType := reflect.TypeOf([0]T{}).Elem()
-	provider.Factories[tType] = factory
+	tName := getTypeName[T]()
+	provider.Factories[tName] = factory
 }
 
 func AddInterfaceFactory[T any](provider *DIContext, factory func(*DIContext) T) {
-	ensureInitialized(provider)
-	tType := reflect.TypeOf([0]T{}).Elem()
-	provider.InterfaceFactories[tType] = factory
+	tName := getTypeName[T]()
+	provider.InterfaceFactories[tName] = factory
 }
 
 func GetService[T any](provider *DIContext) *T {
-	ensureInitialized(provider)
-	tType := reflect.TypeOf([0]T{}).Elem()
+	tName := getTypeName[T]()
 
-	serviceGeneric, found := provider.Instances[tType]
+	tGeneric, found := provider.SingletonInstances[tName]
 	if found {
-		if service, ok := serviceGeneric.(*T); ok {
-			return service
+		t, ok := tGeneric.(*T)
+
+		if ok {
+			return t
 		}
 	}
 
-	serviceFactory, found := provider.Factories[tType]
+	serviceFactory, found := provider.SingletonFactories[tName]
 	if found {
-		serviceGeneric = serviceFactory.(func(*DIContext) *T)(provider)
-		if service, ok := serviceGeneric.(*T); ok {
-			return service
+		tFactory, ok := serviceFactory.(func(*DIContext) *T)
+
+		if ok {
+			t := tFactory(provider)
+			provider.SingletonInstances[tName] = t
+			return t
+		}
+	}
+
+	serviceFactory, found = provider.Factories[tName]
+	if found {
+		tFactory, ok := serviceFactory.(func(*DIContext) *T)
+
+		if ok {
+			return tFactory(provider)
 		}
 	}
 
 	var panicMsg string
 	if !found {
-		panicMsg = fmt.Sprintf("Service %s singleton or factory not found", tType.Name())
+		panicMsg = fmt.Sprintf("Service %s singleton or factory not found", tName)
 	} else {
-		panicMsg = fmt.Sprintf("Failed to convert service %s", tType.Name())
+		panicMsg = fmt.Sprintf("Failed to convert service %s", tName)
 	}
 	panic(panicMsg)
 }
 
 func GetInterfaceService[T any](provider *DIContext) T {
-	tType := reflect.TypeOf([0]T{}).Elem()
+	tName := getTypeName[T]()
 
-	serviceGeneric, found := provider.InterfaceInstances[tType]
+	tGeneric, found := provider.InterfaceSingletonInstances[tName]
 	if found {
-		if service, ok := serviceGeneric.(T); ok {
-			return service
+		t, ok := tGeneric.(T)
+
+		if ok {
+			return t
 		}
 	}
 
-	serviceFactory, found := provider.InterfaceFactories[tType]
+	serviceFactory, found := provider.InterfaceSingletonFactories[tName]
 	if found {
-		serviceGeneric = serviceFactory.(func(*DIContext) T)(provider)
-		if service, ok := serviceGeneric.(T); ok {
-			return service
+		tFactory, ok := serviceFactory.(func(*DIContext) T)
+
+		if ok {
+			t := tFactory(provider)
+			provider.InterfaceSingletonInstances[tName] = t
+			return t
+		}
+	}
+
+	serviceFactory, found = provider.InterfaceFactories[tName]
+	if found {
+		tFactory, ok := serviceFactory.(func(*DIContext) T)
+
+		if ok {
+			return tFactory(provider)
 		}
 	}
 
 	var panicMsg string
 	if !found {
-		panicMsg = fmt.Sprintf("Service %s singleton or factory not found", tType.Name())
+		panicMsg = fmt.Sprintf("Interface %s singleton or factory not found", tName)
 	} else {
-		panicMsg = fmt.Sprintf("Failed to convert service %s", tType.Name())
+		panicMsg = fmt.Sprintf("Interface to convert service %s", tName)
 	}
 	panic(panicMsg)
+}
+
+func getTypeName[T any]() string {
+	tType := reflect.TypeOf([0]T{}).Elem()
+	return tType.PkgPath() + "/" + tType.Name()
 }

@@ -27,8 +27,10 @@ func (s *STest2) SetContent(v int) {
 }
 
 func Test__DISingleton__ShouldReturn__SameInstanceAlways(t *testing.T) {
-	ctx := new(di.DIContext)
-	di.AddSingleton[STest](ctx, new(STest))
+	ctx := di.NewContext()
+	di.AddSingleton[STest](ctx, func(*di.DIContext) *STest {
+		return new(STest)
+	})
 
 	test := di.GetService[STest](ctx)
 	test.content = 212031
@@ -41,7 +43,7 @@ func Test__DISingleton__ShouldReturn__SameInstanceAlways(t *testing.T) {
 }
 
 func Test__DIFactory__ShouldReturn__NewInstanceEveryTime(t *testing.T) {
-	ctx := new(di.DIContext)
+	ctx := di.NewContext()
 	di.AddFactory[STest2](ctx, func(*di.DIContext) *STest2 {
 		return new(STest2)
 	})
@@ -62,8 +64,10 @@ func Test__DIFactory__ShouldReturn__NewInstanceEveryTime(t *testing.T) {
 }
 
 func Test__DIInterfaceSingleton__ShouldReturn__NewInstanceEveryTime(t *testing.T) {
-	ctx := new(di.DIContext)
-	di.AddInterfaceSingleton[STestInterface](ctx, new(STest2))
+	ctx := di.NewContext()
+	di.AddInterfaceSingleton[STestInterface](ctx, func(*di.DIContext) STestInterface {
+		return new(STest2)
+	})
 
 	test := di.GetInterfaceService[STestInterface](ctx)
 	test.SetContent(212031)
@@ -76,7 +80,7 @@ func Test__DIInterfaceSingleton__ShouldReturn__NewInstanceEveryTime(t *testing.T
 }
 
 func Test__DIInterfaceFactory__ShouldReturn__NewInstanceEveryTime(t *testing.T) {
-	ctx := new(di.DIContext)
+	ctx := di.NewContext()
 	di.AddInterfaceFactory[STestInterface](ctx, func(*di.DIContext) STestInterface {
 		return new(STest2)
 	})
