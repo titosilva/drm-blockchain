@@ -1,7 +1,7 @@
 package udpserver_test
 
 import (
-	udpserver "drm-blockchain/src/networking/transport/udp_server"
+	"drm-blockchain/src/networking/transport/udpserver"
 	"net"
 	"testing"
 )
