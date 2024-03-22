@@ -1,7 +1,7 @@
-package udpserver_test
+package udp_test
 
 import (
-	"drm-blockchain/src/networking/transport/udpserver"
+	"drm-blockchain/src/networking/transport/udp"
 	"net"
 	"testing"
 )
@@ -35,7 +35,7 @@ func sendUdpMsgTo(msg string, addr string) {
 }
 
 func Test__UDPServer__ShouldReceiveData__OnLoopbackAddr(t *testing.T) {
-	server, err := udpserver.Open(testAddr1)
+	server, err := udp.Open(testAddr1)
 	if err != nil {
 		t.Error(err)
 	}
@@ -50,13 +50,13 @@ func Test__UDPServer__ShouldReceiveData__OnLoopbackAddr(t *testing.T) {
 }
 
 func Test__UDPServer__ShouldWriteData__OnLoopbackAddr(t *testing.T) {
-	server1, err := udpserver.Open(testAddr1)
+	server1, err := udp.Open(testAddr1)
 	if err != nil {
 		t.Error(err)
 	}
 	defer server1.Close()
 
-	server2, err := udpserver.Open(testAddr2)
+	server2, err := udp.Open(testAddr2)
 	if err != nil {
 		t.Error(err)
 	}

@@ -1,24 +1,36 @@
-package udpserver
+package udp
 
 import (
-	udppacket "drm-blockchain/src/networking/transport"
 	errorutils "drm-blockchain/src/utils/error"
 	"fmt"
 	"net"
 )
 
-type UDPServer struct {
+type Packet struct {
+	Addr *net.UDPAddr
+	Data []byte
+}
+
+func NewPacket(addr *net.UDPAddr, data []byte) Packet {
+	return Packet{
+		Addr: addr,
+		Data: data,
+	}
+}
+
+type Server struct {
 	conn    *net.UDPConn
 	closed  bool
 	Addr    *net.UDPAddr
-	Channel chan udppacket.UDPPacket
+	Channel chan Packet
 }
 
 const (
-	UDPServerPacketBufferSize = 256
+	ServerPacketBufferSize = 256
+	PacketSize             = 8192
 )
 
-func Open(addr string) (*UDPServer, error) {
+func Open(addr string) (*Server, error) {
 	resolved, err := net.ResolveUDPAddr("udp", addr)
 
 	if err != nil {
@@ -31,44 +43,44 @@ func Open(addr string) (*UDPServer, error) {
 		return nil, errorutils.NewfWithInner(err, "Failed to listen on UDP for \"%s\"", addr)
 	}
 
-	server := new(UDPServer)
+	server := new(Server)
 	server.conn = conn
-	server.conn.SetReadBuffer(udppacket.UDPPacketSize)
+	server.conn.SetReadBuffer(PacketSize)
 	server.Addr = resolved
-	server.Channel = make(chan udppacket.UDPPacket, UDPServerPacketBufferSize)
+	server.Channel = make(chan Packet, ServerPacketBufferSize)
 
 	go server.listen()
 
 	return server, nil
 }
 
-func (server *UDPServer) listen() error {
+func (server *Server) listen() error {
 	if server.closed {
 		fmt.Println("Server closed!")
 		panic("Server closed!")
 	}
 
 	for {
-		var data [udppacket.UDPPacketSize]byte
+		var data [PacketSize]byte
 		sz, addr, err := server.conn.ReadFromUDP(data[:])
 
 		if err != nil {
 			return err
 		}
 
-		server.Channel <- udppacket.New(addr, data[:sz])
+		server.Channel <- NewPacket(addr, data[:sz])
 	}
 }
 
-func (server *UDPServer) SendPkt(pkt udppacket.UDPPacket) {
+func (server *Server) SendPkt(pkt Packet) {
 	server.Send(pkt.Data[:], pkt.Addr)
 }
 
-func (server *UDPServer) Send(data []byte, addr *net.UDPAddr) {
+func (server *Server) Send(data []byte, addr *net.UDPAddr) {
 	server.conn.WriteToUDP(data[:], addr)
 }
 
-func (server *UDPServer) Close() {
+func (server *Server) Close() {
 	close(server.Channel)
 	server.conn.Close()
 	server.closed = true
