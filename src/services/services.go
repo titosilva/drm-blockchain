@@ -23,6 +23,6 @@ func InitializeServices(ctx *di.DIContext) {
 	err := di.GetService[keyrepository.KeyRepository](ctx).Initialize()
 
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 }
