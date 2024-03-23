@@ -1,52 +1,37 @@
 package udp
 
 import (
+	packet "drm-blockchain/src/networking/transport"
 	errorutils "drm-blockchain/src/utils/error"
+	"errors"
 	"net"
 )
-
-type Packet struct {
-	Addr *net.UDPAddr
-	Data []byte
-}
-
-func NewPacket(addr *net.UDPAddr, data []byte) Packet {
-	return Packet{
-		Addr: addr,
-		Data: data,
-	}
-}
 
 type Server struct {
 	conn    *net.UDPConn
 	closed  bool
 	Addr    *net.UDPAddr
-	Packets chan Packet
+	Packets chan packet.Packet
 }
-
-const (
-	ServerPacketBufferSize = 256
-	PacketSize             = 8192
-)
 
 func Open(addr string) (*Server, error) {
 	resolved, err := net.ResolveUDPAddr("udp", addr)
 
 	if err != nil {
-		return nil, errorutils.NewfWithInner(err, "Failed UDP address resolution for \"%s\"", addr)
+		return nil, errorutils.NewfWithInner(err, "failed UDP address resolution for \"%s\"", addr)
 	}
 
 	conn, err := net.ListenUDP("udp", resolved)
 
 	if err != nil {
-		return nil, errorutils.NewfWithInner(err, "Failed to listen on UDP for \"%s\"", addr)
+		return nil, errorutils.NewfWithInner(err, "failed to listen on UDP for \"%s\"", addr)
 	}
 
 	server := new(Server)
 	server.conn = conn
-	server.conn.SetReadBuffer(PacketSize)
+	server.conn.SetReadBuffer(packet.PacketMaxSize)
 	server.Addr = resolved
-	server.Packets = make(chan Packet, ServerPacketBufferSize)
+	server.Packets = make(chan packet.Packet)
 
 	go server.listen()
 
@@ -59,23 +44,34 @@ func (server *Server) listen() error {
 	}
 
 	for {
-		var data [PacketSize]byte
+		var data [packet.PacketMaxSize]byte
 		sz, addr, err := server.conn.ReadFromUDP(data[:])
 
 		if err != nil {
 			return err
 		}
 
-		server.Packets <- NewPacket(addr, data[:sz])
+		pkt, err := packet.NewPacket(addr, data[:sz])
+
+		if err != nil {
+			return err
+		}
+
+		server.Packets <- pkt
 	}
 }
 
-func (server *Server) SendPkt(pkt Packet) {
-	server.Send(pkt.Data[:], pkt.Addr)
+func (server *Server) SendPkt(pkt packet.Packet) error {
+	return server.Send(pkt.Data[:], pkt.Addr)
 }
 
-func (server *Server) Send(data []byte, addr *net.UDPAddr) {
-	server.conn.WriteToUDP(data[:], addr)
+func (server *Server) Send(data []byte, addr net.Addr) error {
+	if addr.Network() != "udp" {
+		return errors.New("expected UDP address")
+	}
+
+	_, err := server.conn.WriteToUDP(data[:], addr.(*net.UDPAddr))
+	return err
 }
 
 func (server *Server) Close() {
