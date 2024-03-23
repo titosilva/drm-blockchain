@@ -1,10 +1,10 @@
 package services
 
 import (
+	"drm-blockchain/src/core/blobstore"
+	"drm-blockchain/src/core/blobstore/localblobstore"
+	"drm-blockchain/src/core/repositories/keyrepository"
 	"drm-blockchain/src/di"
-	"drm-blockchain/src/services/blobstore"
-	"drm-blockchain/src/services/blobstore/localblobstore"
-	"drm-blockchain/src/services/repositories/keyrepository"
 )
 
 func SetupServices() *di.DIContext {

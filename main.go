@@ -1,7 +1,7 @@
 package main
 
 import (
-	"drm-blockchain/src/services"
+	services "drm-blockchain/src/core"
 	"fmt"
 )
 

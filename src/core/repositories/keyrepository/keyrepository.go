@@ -5,8 +5,8 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/x509"
+	"drm-blockchain/src/core/blobstore"
 	"drm-blockchain/src/di"
-	"drm-blockchain/src/services/blobstore"
 )
 
 type KeyRepository struct {

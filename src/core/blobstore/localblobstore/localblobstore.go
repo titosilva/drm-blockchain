@@ -1,8 +1,8 @@
 package localblobstore
 
 import (
+	"drm-blockchain/src/core/blobstore"
 	"drm-blockchain/src/di"
-	"drm-blockchain/src/services/blobstore"
 	errorutils "drm-blockchain/src/utils/error"
 	"errors"
 	"io"
