@@ -43,7 +43,7 @@ func Test__UDPServer__ShouldReceiveData__OnLoopbackAddr(t *testing.T) {
 	defer server.Close()
 
 	sendUdpMsgTo(testMsg, testAddr1)
-	m := <-server.Channel
+	m := <-server.Packets
 	if string(m.Data) != testMsg {
 		t.Error("Did not receive expected UDP message")
 	}
@@ -63,7 +63,7 @@ func Test__UDPServer__ShouldWriteData__OnLoopbackAddr(t *testing.T) {
 	defer server2.Close()
 
 	server1.Send([]byte(testMsg), server2.Addr)
-	m := <-server2.Channel
+	m := <-server2.Packets
 
 	if string(m.Data) != testMsg {
 		t.Error("Did not receive expected UDP message")

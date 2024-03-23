@@ -2,7 +2,6 @@ package udp
 
 import (
 	errorutils "drm-blockchain/src/utils/error"
-	"fmt"
 	"net"
 )
 
@@ -22,7 +21,7 @@ type Server struct {
 	conn    *net.UDPConn
 	closed  bool
 	Addr    *net.UDPAddr
-	Channel chan Packet
+	Packets chan Packet
 }
 
 const (
@@ -47,7 +46,7 @@ func Open(addr string) (*Server, error) {
 	server.conn = conn
 	server.conn.SetReadBuffer(PacketSize)
 	server.Addr = resolved
-	server.Channel = make(chan Packet, ServerPacketBufferSize)
+	server.Packets = make(chan Packet, ServerPacketBufferSize)
 
 	go server.listen()
 
@@ -56,7 +55,6 @@ func Open(addr string) (*Server, error) {
 
 func (server *Server) listen() error {
 	if server.closed {
-		fmt.Println("Server closed!")
 		panic("Server closed!")
 	}
 
@@ -68,7 +66,7 @@ func (server *Server) listen() error {
 			return err
 		}
 
-		server.Channel <- NewPacket(addr, data[:sz])
+		server.Packets <- NewPacket(addr, data[:sz])
 	}
 }
 
@@ -81,7 +79,7 @@ func (server *Server) Send(data []byte, addr *net.UDPAddr) {
 }
 
 func (server *Server) Close() {
-	close(server.Channel)
+	close(server.Packets)
 	server.conn.Close()
 	server.closed = true
 }
