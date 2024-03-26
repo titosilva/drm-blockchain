@@ -13,7 +13,6 @@ func Test__AssembleThenDisassemble__Hello(t *testing.T) {
 	hello := messages.Hello{
 		DestinationAddress: "123",
 		SourceAddress:      "456",
-		SourcePublicKey:    []byte{1, 2, 3, 4, 5},
 	}
 
 	msg, err := messages.Assemble(hello)
@@ -33,7 +32,6 @@ func Test__EncodeThenDecode__Hello(t *testing.T) {
 	hello := messages.Hello{
 		DestinationAddress: "123",
 		SourceAddress:      "456",
-		SourcePublicKey:    []byte{1, 2, 3, 4, 5},
 	}
 
 	msg, err := messages.Assemble(hello)

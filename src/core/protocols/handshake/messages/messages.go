@@ -6,52 +6,50 @@ import (
 	"encoding/asn1"
 )
 
-type HandshakeMessage struct {
-	Prelude string
-	Content []byte
+type HandshakeMessageCapsule struct {
+	TypeName string
+	Content  []byte
 }
 
-const PreludeLength = 10
-
-func Assemble(msg any) (HandshakeMessage, error) {
+func Assemble(msg any) (HandshakeMessageCapsule, error) {
 	bs, err := asn1.Marshal(msg)
 
 	if err != nil {
-		return HandshakeMessage{}, err
+		return HandshakeMessageCapsule{}, err
 	}
 
-	return HandshakeMessage{
-		Prelude: utils.TypeOf(msg),
-		Content: bs,
+	return HandshakeMessageCapsule{
+		TypeName: utils.TypeOf(msg),
+		Content:  bs,
 	}, nil
 }
 
-func Disassemble(msg HandshakeMessage) (content any, typeName string, err error) {
-	switch msg.Prelude {
+func Disassemble(capsule HandshakeMessageCapsule) (content any, typeName string, err error) {
+	switch capsule.TypeName {
 	case utils.TypeToString[Hello]():
 		content = new(Hello)
 	default:
-		err = errorutils.Newf("unkwnown prelude '%s' on handshake", msg.Prelude)
+		err = errorutils.Newf("unkwnown prelude '%s' on handshake", capsule.TypeName)
 	}
 
 	if err != nil {
 		return nil, "", err
 	}
 
-	_, err = asn1.Unmarshal(msg.Content, content)
-	return content, msg.Prelude, err
+	_, err = asn1.Unmarshal(capsule.Content, content)
+	return content, capsule.TypeName, err
 }
 
-func Encode(hmsg HandshakeMessage) ([]byte, error) {
+func Encode(hmsg HandshakeMessageCapsule) ([]byte, error) {
 	return asn1.Marshal(hmsg)
 }
 
-func Decode(bs []byte) (HandshakeMessage, error) {
-	hmsg := new(HandshakeMessage)
+func Decode(bs []byte) (HandshakeMessageCapsule, error) {
+	hmsg := new(HandshakeMessageCapsule)
 	_, err := asn1.Unmarshal(bs, hmsg)
 
 	if err != nil {
-		return HandshakeMessage{}, err
+		return HandshakeMessageCapsule{}, err
 	}
 
 	return *hmsg, err
@@ -60,5 +58,4 @@ func Decode(bs []byte) (HandshakeMessage, error) {
 type Hello struct {
 	DestinationAddress string
 	SourceAddress      string
-	SourcePublicKey    []byte
 }
