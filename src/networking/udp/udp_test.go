@@ -1,7 +1,7 @@
 package udp_test
 
 import (
-	"drm-blockchain/src/networking/transport/udp"
+	"drm-blockchain/src/networking/udp"
 	"net"
 	"testing"
 )

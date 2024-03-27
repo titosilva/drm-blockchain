@@ -2,9 +2,10 @@ package handshake
 
 import (
 	"context"
+	"drm-blockchain/src/core/protocols/handshake/executor"
 	"drm-blockchain/src/core/protocols/handshake/messages"
-	packet "drm-blockchain/src/networking/transport"
-	"drm-blockchain/src/networking/transport/udp"
+	"drm-blockchain/src/networking/tunnel"
+	"drm-blockchain/src/networking/udp"
 	"drm-blockchain/src/utils"
 )
 
@@ -12,6 +13,7 @@ type HandshakeHost struct {
 	udpServer    *udp.Server
 	closed       bool
 	cancellation context.Context
+	executors    map[string]*executor.HandshakeExecutor
 }
 
 func Open(addr string, cancellation context.Context) (*HandshakeHost, error) {
@@ -43,7 +45,7 @@ func (host *HandshakeHost) listen() {
 	}
 }
 
-func (host *HandshakeHost) processPacket(pkt packet.Packet) {
+func (host *HandshakeHost) processPacket(pkt tunnel.Packet) {
 	capsule, err := messages.Decode(pkt.Data)
 
 	if err != nil {
@@ -51,8 +53,12 @@ func (host *HandshakeHost) processPacket(pkt packet.Packet) {
 	}
 
 	_, typeName, err := messages.Disassemble(capsule)
-	switch typeName {
-	case utils.TypeToString[messages.Hello]():
+	if err != nil {
+		return
+	}
+
+	if typeName == utils.TypeToString[messages.Hello]() {
+		tunnel = host.udpServer.Tunnel()
 	}
 }
 

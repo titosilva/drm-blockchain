@@ -1,7 +1,7 @@
 package udp
 
 import (
-	packet "drm-blockchain/src/networking/transport"
+	"drm-blockchain/src/networking/tunnel"
 	errorutils "drm-blockchain/src/utils/error"
 	"errors"
 	"net"
@@ -11,7 +11,8 @@ type Server struct {
 	conn    *net.UDPConn
 	closed  bool
 	Addr    *net.UDPAddr
-	Packets chan packet.Packet
+	Packets chan tunnel.Packet
+	tunnels map[string]*UdpTunnel
 }
 
 func Open(addr string) (*Server, error) {
@@ -29,9 +30,10 @@ func Open(addr string) (*Server, error) {
 
 	server := new(Server)
 	server.conn = conn
-	server.conn.SetReadBuffer(packet.PacketMaxSize)
+	server.conn.SetReadBuffer(tunnel.PacketMaxSize)
 	server.Addr = resolved
-	server.Packets = make(chan packet.Packet)
+	server.Packets = make(chan tunnel.Packet, 256)
+	server.closed = false
 
 	go server.listen()
 
@@ -44,25 +46,24 @@ func (server *Server) listen() error {
 	}
 
 	for {
-		var data [packet.PacketMaxSize]byte
+		var data [tunnel.PacketMaxSize]byte
 		sz, addr, err := server.conn.ReadFromUDP(data[:])
 
 		if err != nil {
 			return err
 		}
 
-		pkt, err := packet.NewPacket(addr, data[:sz])
+		pkt, err := tunnel.NewPacket(data[:sz])
 
 		if err != nil {
 			return err
 		}
 
 		server.Packets <- pkt
+		if tunnel, found := server.tunnels[addr.String()]; found {
+			tunnel.Recv.Notify(pkt)
+		}
 	}
-}
-
-func (server *Server) SendPkt(pkt packet.Packet) error {
-	return server.Send(pkt.Data[:], pkt.Addr)
 }
 
 func (server *Server) Send(data []byte, addr net.Addr) error {
@@ -72,6 +73,10 @@ func (server *Server) Send(data []byte, addr net.Addr) error {
 
 	_, err := server.conn.WriteToUDP(data[:], addr.(*net.UDPAddr))
 	return err
+}
+
+func (server *Server) Tunnel(addr *net.UDPAddr) *UdpTunnel {
+	return NewTunnel(server, addr)
 }
 
 func (server *Server) Close() {

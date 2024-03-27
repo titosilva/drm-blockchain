@@ -18,7 +18,7 @@ func Open(addr string) (*Server, error) {
 		return nil, errorutils.NewfWithInner(err, "Failed TCP address resolution for \"%s\"", addr)
 	}
 
-	listener, err := net.ListenTCP("udp", resolved)
+	listener, err := net.ListenTCP("tcp", resolved)
 
 	if err != nil {
 		return nil, errorutils.NewfWithInner(err, "Failed to listen on TCP for \"%s\"", addr)
@@ -27,6 +27,7 @@ func Open(addr string) (*Server, error) {
 	server := new(Server)
 	server.listener = listener
 	server.Connections = make(chan net.Conn)
+	server.closed = false
 
 	go server.listen()
 
