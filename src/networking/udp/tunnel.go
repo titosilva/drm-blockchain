@@ -7,16 +7,22 @@ import (
 )
 
 type UdpTunnel struct {
-	server *Server
-	addr   *net.UDPAddr
-	Recv   *multichannel.MultiChannel[tunnel.Packet]
-	closed bool
+	server     *Server
+	addr       *net.UDPAddr
+	Recv       *multichannel.MultiChannel[tunnel.Packet]
+	closedChan *multichannel.MultiChannel[any]
+	closed     bool
 }
 
-func NewTunnel(server *Server, addr *net.UDPAddr) *UdpTunnel {
+func NewTunnel(server *Server, addr string) *UdpTunnel {
 	r := new(UdpTunnel)
 	r.server = server
-	r.addr = addr
+	var err error
+	r.addr, err = net.ResolveUDPAddr("udp", addr)
+
+	if err != nil {
+		panic("cannot resolve address")
+	}
 
 	r.Recv = multichannel.New[tunnel.Packet]()
 
@@ -28,12 +34,29 @@ func (conn *UdpTunnel) SendPkt(pkt tunnel.Packet) error {
 }
 
 func (conn *UdpTunnel) Send(data []byte) error {
+	if conn.closed {
+		panic("tunnel closed!")
+	}
+
 	err := conn.server.Send(data[:], conn.addr)
 	return err
 }
 
 func (conn *UdpTunnel) ReceivePkt() <-chan tunnel.Packet {
+	if conn.closed {
+		panic("tunnel closed!")
+	}
+
 	return conn.Recv.Subscribe()
+}
+
+// WaitClose implements tunnel.Tunnel.
+func (tunnel *UdpTunnel) WaitClose() <-chan any {
+	if tunnel.closed {
+		panic("tunnel closed!")
+	}
+
+	return tunnel.closedChan.Subscribe()
 }
 
 func (conn *UdpTunnel) Close() error {
@@ -43,5 +66,9 @@ func (conn *UdpTunnel) Close() error {
 
 	conn.closed = true
 	conn.Recv.Close()
+	conn.closedChan.Notify(0)
+	conn.closedChan.Close()
 	return nil
 }
+
+var _ tunnel.Tunnel = new(UdpTunnel)
