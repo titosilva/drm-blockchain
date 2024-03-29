@@ -6,6 +6,10 @@ import (
 	"drm-blockchain/src/di"
 )
 
+type IKeyRepository interface {
+	GetSelfIdentity() *identities.Identity
+}
+
 type KeyRepository struct {
 	// Dependencies
 	bs blobstore.BlobStore
@@ -16,7 +20,7 @@ const (
 	selfPrivKeyPath string = "keys/static-priv"
 )
 
-func DIFactory(ctx *di.DIContext) *KeyRepository {
+func DIFactory(ctx *di.DIContext) IKeyRepository {
 	kr := new(KeyRepository)
 	kr.bs = di.GetInterfaceService[blobstore.BlobStore](ctx)
 	return kr
