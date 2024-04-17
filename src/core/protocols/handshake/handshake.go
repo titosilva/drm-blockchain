@@ -11,6 +11,7 @@ import (
 	"drm-blockchain/src/di"
 	"drm-blockchain/src/networking/udp"
 	"drm-blockchain/src/utils"
+	"encoding/hex"
 	"net"
 )
 
@@ -63,7 +64,7 @@ func (host *HandshakeHost) Greet(nodeAddr string, addr string) {
 	nodeId, _ := identities.FromAddress(nodeAddr)
 
 	challengeData := append(nonce, ephKey.PublicKey().Bytes()...)
-	challengeData = append(challengeData, []byte(nodeAddr)...)
+	challengeData = append(challengeData, nodeAddr...)
 
 	digest := sha256.New()
 	digest.Write(challengeData)
@@ -81,7 +82,7 @@ func (host *HandshakeHost) Greet(nodeAddr string, addr string) {
 	tun.Send(challengeRespData)
 
 	secret, _ := nodeId.DeriveSecret(ephKey)
-	print(secret)
+	println(hex.EncodeToString(secret))
 }
 
 func (host *HandshakeHost) listen() {

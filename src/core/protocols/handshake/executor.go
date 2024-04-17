@@ -1,12 +1,15 @@
 package handshake
 
 import (
+	"crypto/sha256"
 	"drm-blockchain/src/core/protocols/handshake/messages"
 	"drm-blockchain/src/core/protocols/identities"
+	"drm-blockchain/src/core/protocols/identities/identitykeys"
 	"drm-blockchain/src/core/repositories/keyrepository"
 	"drm-blockchain/src/crypto/random"
 	"drm-blockchain/src/di"
 	"drm-blockchain/src/networking/tunnel"
+	"encoding/hex"
 	"errors"
 )
 
@@ -45,7 +48,23 @@ func (ex *Executor) Execute(helloMsg *messages.Hello, tun tunnel.Tunnel) {
 	decoded, _ := messages.Decode(p.Data)
 	resp, _, _ := messages.Disassemble(decoded)
 	challengeResp := resp.(*messages.ChallengeResponse)
-	print(challengeResp.Signature)
+	nodeId, _ := identities.FromAddress(helloMsg.SourceAddress)
+
+	challengeData := append(nonce, challengeResp.EphemeralPubKey...)
+	challengeData = append(challengeData, ex.keyRepo.GetSelfIdentity().GetAddress()...)
+
+	digest := sha256.New()
+	digest.Write(challengeData)
+	challengeSum := digest.Sum(nil)
+
+	if !nodeId.VerifySignature(challengeSum, challengeResp.Signature) {
+		panic("Signature verification failed")
+	}
+
+	ephPubKey, _ := identitykeys.GetECDHCurve().NewPublicKey(challengeResp.EphemeralPubKey)
+	secret, _ := ex.keyRepo.GetSelfIdentity().RestoreSecret(ephPubKey)
+
+	println(hex.EncodeToString(secret))
 }
 
 func (ex *Executor) verifyMsg(helloMsg *messages.Hello) (*identities.Identity, error) {

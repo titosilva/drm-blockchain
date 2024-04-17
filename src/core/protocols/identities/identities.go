@@ -82,6 +82,10 @@ func (id *Identity) Sign(data []byte) ([]byte, error) {
 	return ecdsa.SignASN1(rand.Reader, id.privateKey, data)
 }
 
+func (id *Identity) VerifySignature(data []byte, signature []byte) bool {
+	return ecdsa.VerifyASN1(id.publicKey, data, signature)
+}
+
 func (id *Identity) DeriveSecret(key *ecdh.PrivateKey) ([]byte, error) {
 	pub, err := id.publicKey.ECDH()
 
@@ -90,4 +94,14 @@ func (id *Identity) DeriveSecret(key *ecdh.PrivateKey) ([]byte, error) {
 	}
 
 	return key.ECDH(pub)
+}
+
+func (id *Identity) RestoreSecret(pubKey *ecdh.PublicKey) ([]byte, error) {
+	priv, err := id.privateKey.ECDH()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return priv.ECDH(pubKey)
 }
