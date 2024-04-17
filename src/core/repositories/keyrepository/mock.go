@@ -20,4 +20,9 @@ func (m *Mock) GetSelfIdentity() *identities.Identity {
 	return m.id
 }
 
+// Sign implements IKeyRepository.
+func (m *Mock) Sign(data []byte) ([]byte, error) {
+	return m.id.Sign(data)
+}
+
 var _ IKeyRepository = new(Mock)

@@ -1,7 +1,9 @@
 package identities
 
 import (
+	"crypto/ecdh"
 	"crypto/ecdsa"
+	"crypto/rand"
 	"drm-blockchain/src/core/protocols/identities/address"
 	"drm-blockchain/src/core/protocols/identities/identitykeys"
 	"errors"
@@ -70,4 +72,22 @@ func (id *Identity) ExportPrivateKey() ([]byte, error) {
 	}
 
 	return identitykeys.EncodeIdentityPrivateKey(id.privateKey)
+}
+
+func (id *Identity) Sign(data []byte) ([]byte, error) {
+	if id.privateKey == nil {
+		return nil, errors.New("this identity does not have a private key loaded")
+	}
+
+	return ecdsa.SignASN1(rand.Reader, id.privateKey, data)
+}
+
+func (id *Identity) DeriveSecret(key *ecdh.PrivateKey) ([]byte, error) {
+	pub, err := id.publicKey.ECDH()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return key.ECDH(pub)
 }

@@ -10,7 +10,7 @@ import (
 func Test__Receiver(t *testing.T) {
 	ez := ez.New(t)
 	d := dummy.New()
-	pkt, _ := tunnel.NewPacket("", []byte{1, 2, 3, 4, 5})
+	pkt, _ := tunnel.NewPacket([]byte{1, 2, 3, 4, 5})
 
 	c := d.ReceivePkt()
 	go func() {

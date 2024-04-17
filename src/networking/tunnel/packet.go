@@ -9,11 +9,10 @@ const (
 )
 
 type Packet struct {
-	Address string
-	Data    []byte
+	Data []byte
 }
 
-func NewPacket(addr string, data []byte) (Packet, error) {
+func NewPacket(data []byte) (Packet, error) {
 	if len(data) > PacketMaxSize {
 		return Packet{}, errors.New("max packet size exceeded")
 	}

@@ -1,6 +1,7 @@
 package identitykeys
 
 import (
+	"crypto/ecdh"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -11,6 +12,10 @@ import (
 
 func GetCurve() elliptic.Curve {
 	return elliptic.P256()
+}
+
+func GetECDHCurve() ecdh.Curve {
+	return ecdh.P256()
 }
 
 func GeneratePrivateKey() *ecdsa.PrivateKey {

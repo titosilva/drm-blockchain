@@ -4,6 +4,7 @@ import (
 	"drm-blockchain/src/core/protocols/handshake/messages"
 	"drm-blockchain/src/core/protocols/identities"
 	"drm-blockchain/src/core/repositories/keyrepository"
+	"drm-blockchain/src/crypto/random"
 	"drm-blockchain/src/di"
 	"drm-blockchain/src/networking/tunnel"
 	"errors"
@@ -25,12 +26,26 @@ func New(keyRepo keyrepository.IKeyRepository) *Executor {
 	return ex
 }
 
-func (ex *Executor) Execute(helloMsg *messages.Hello, tunnel tunnel.Tunnel) {
+func (ex *Executor) Execute(helloMsg *messages.Hello, tun tunnel.Tunnel) {
 	_, err := ex.verifyMsg(helloMsg)
 	if err != nil {
 		return
 	}
 
+	nonce, _ := random.GenerateBytes(32)
+	challengeMsg := messages.Challenge{
+		Nonce: nonce,
+	}
+	assembly, _ := messages.Assemble(challengeMsg)
+	encoded, _ := messages.Encode(assembly)
+	pkt, _ := tunnel.NewPacket(encoded)
+	tun.SendPkt(pkt)
+
+	p := <-tun.ReceivePkt()
+	decoded, _ := messages.Decode(p.Data)
+	resp, _, _ := messages.Disassemble(decoded)
+	challengeResp := resp.(*messages.ChallengeResponse)
+	print(challengeResp.Signature)
 }
 
 func (ex *Executor) verifyMsg(helloMsg *messages.Hello) (*identities.Identity, error) {

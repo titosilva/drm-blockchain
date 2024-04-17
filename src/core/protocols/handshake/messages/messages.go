@@ -28,6 +28,10 @@ func Disassemble(capsule HandshakeMessageCapsule) (content any, typeName string,
 	switch capsule.TypeName {
 	case utils.TypeToString[Hello]():
 		content = new(Hello)
+	case utils.TypeToString[Challenge]():
+		content = new(Challenge)
+	case utils.TypeToString[ChallengeResponse]():
+		content = new(ChallengeResponse)
 	default:
 		err = errorutils.Newf("unkwnown prelude '%s' on handshake", capsule.TypeName)
 	}
@@ -58,4 +62,13 @@ func Decode(bs []byte) (HandshakeMessageCapsule, error) {
 type Hello struct {
 	DestinationAddress string
 	SourceAddress      string
+}
+
+type Challenge struct {
+	Nonce []byte
+}
+
+type ChallengeResponse struct {
+	EphemeralPubKey []byte
+	Signature       []byte
 }

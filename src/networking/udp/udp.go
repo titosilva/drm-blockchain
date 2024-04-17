@@ -8,12 +8,24 @@ import (
 	"net"
 )
 
+type Datagram struct {
+	Addr *net.UDPAddr
+	Data []byte
+}
+
+func NewDatagram(addr *net.UDPAddr, data []byte) Datagram {
+	return Datagram{
+		Addr: addr,
+		Data: data,
+	}
+}
+
 type Server struct {
-	conn    *net.UDPConn
-	closed  bool
-	Addr    *net.UDPAddr
-	Packets chan tunnel.Packet
-	tunnels *safemap.SafeMap[string, *UdpTunnel]
+	conn      *net.UDPConn
+	closed    bool
+	Addr      *net.UDPAddr
+	Datagrams chan Datagram
+	tunnels   *safemap.SafeMap[string, *UdpTunnel]
 }
 
 func Open(addr string) (*Server, error) {
@@ -33,7 +45,7 @@ func Open(addr string) (*Server, error) {
 	server.conn = conn
 	server.conn.SetReadBuffer(tunnel.PacketMaxSize)
 	server.Addr = resolved
-	server.Packets = make(chan tunnel.Packet, 256)
+	server.Datagrams = make(chan Datagram, 256)
 	server.tunnels = safemap.New[string, *UdpTunnel]()
 	server.closed = false
 
@@ -55,15 +67,16 @@ func (server *Server) listen() error {
 			return err
 		}
 
-		pkt, err := tunnel.NewPacket(addr.String(), data[:sz])
+		dg := NewDatagram(addr, data[:sz])
 
 		if err != nil {
 			return err
 		}
 
-		server.Packets <- pkt
-		if tunnel, found := server.tunnels.Get(addr.String()); found {
-			tunnel.Recv.Notify(pkt)
+		server.Datagrams <- dg
+		if tun, found := server.tunnels.Get(addr.String()); found {
+			pkt, _ := tunnel.NewPacket(dg.Data)
+			tun.Recv.Notify(pkt)
 		}
 	}
 }
@@ -114,7 +127,7 @@ func (server *Server) unregisterTunnel(addr string) {
 }
 
 func (server *Server) Close() {
-	close(server.Packets)
+	close(server.Datagrams)
 	server.conn.Close()
 	server.closed = true
 }

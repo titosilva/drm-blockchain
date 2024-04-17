@@ -9,6 +9,7 @@ import (
 type IKeyRepository interface {
 	Initialize() error
 	GetSelfIdentity() *identities.Identity
+	Sign(data []byte) ([]byte, error)
 }
 
 type KeyRepository struct {
@@ -37,4 +38,8 @@ func (kr *KeyRepository) Initialize() error {
 
 func (kr *KeyRepository) GetSelfIdentity() *identities.Identity {
 	return kr.id
+}
+
+func (kr *KeyRepository) Sign(data []byte) ([]byte, error) {
+	return kr.id.Sign(data)
 }
