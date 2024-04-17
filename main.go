@@ -24,7 +24,7 @@ func main() {
 	h2, _ := handshake.Open(h2Addr, cancellation, diCtx)
 	defer h2.Close()
 
-	h1.Greet(h2Addr)
+	h1.Greet(h2.GetNodeAddress(), h2Addr)
 
 	for {
 		time.Sleep(time.Second)

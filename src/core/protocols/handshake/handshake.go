@@ -3,6 +3,7 @@ package handshake
 import (
 	"context"
 	"drm-blockchain/src/core/protocols/handshake/messages"
+	"drm-blockchain/src/core/repositories/keyrepository"
 	"drm-blockchain/src/di"
 	"drm-blockchain/src/networking/tunnel"
 	"drm-blockchain/src/networking/udp"
@@ -15,9 +16,10 @@ type HandshakeHost struct {
 	closed       bool
 	di           *di.DIContext
 	cancellation context.Context
+	keyRepo      keyrepository.IKeyRepository
 }
 
-func Open(addr string, cancellation context.Context, di *di.DIContext) (*HandshakeHost, error) {
+func Open(addr string, cancellation context.Context, diCtx *di.DIContext) (*HandshakeHost, error) {
 	udpServer, err := udp.Open(addr)
 	if err != nil {
 		return nil, err
@@ -26,19 +28,24 @@ func Open(addr string, cancellation context.Context, di *di.DIContext) (*Handsha
 	host := new(HandshakeHost)
 	host.udpServer = udpServer
 	host.cancellation = cancellation
-	host.di = di
+	host.di = diCtx
+	host.keyRepo = di.GetInterfaceService[keyrepository.IKeyRepository](diCtx)
 	go host.listen()
 
 	return host, nil
 }
 
-func (host *HandshakeHost) Greet(addr string) {
-	udpAddr, _ := net.ResolveUDPAddr("udp", addr)
+func (host *HandshakeHost) GetNodeAddress() string {
+	return host.keyRepo.GetSelfIdentity().GetAddress()
+}
+
+func (host *HandshakeHost) Greet(nodeAddr string, addr string) {
 	assembly, _ := messages.Assemble(messages.Hello{
-		DestinationAddress: addr,
-		SourceAddress:      host.udpServer.Addr.String(),
+		DestinationAddress: nodeAddr,
+		SourceAddress:      host.GetNodeAddress(),
 	})
 
+	udpAddr, _ := net.ResolveUDPAddr("udp", addr)
 	data, _ := messages.Encode(assembly)
 	host.udpServer.Send(data, udpAddr)
 }
