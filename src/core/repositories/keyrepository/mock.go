@@ -6,6 +6,11 @@ type Mock struct {
 	id *identities.Identity
 }
 
+// Initialize implements IKeyRepository.
+func (*Mock) Initialize() error {
+	panic("unimplemented")
+}
+
 // GetSelfIdentity implements IKeyRepository.
 func (m *Mock) GetSelfIdentity() *identities.Identity {
 	if m.id == nil {

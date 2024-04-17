@@ -4,13 +4,14 @@ import "sync"
 
 type SafeMap[TKey comparable, TVal any] struct {
 	underlyingMap  map[TKey]TVal
-	readWriteMutex *sync.Mutex
+	readWriteMutex *sync.RWMutex
 }
 
 func New[TKey comparable, TVal any]() *SafeMap[TKey, TVal] {
 	m := new(SafeMap[TKey, TVal])
 
 	m.underlyingMap = make(map[TKey]TVal)
+	m.readWriteMutex = new(sync.RWMutex)
 
 	return m
 }

@@ -14,9 +14,9 @@ func (kr *KeyRepository) loadOrCreateSelfIdentity() error {
 	var id *identities.Identity
 
 	if exists {
-		id, err = kr.createIdentity()
-	} else {
 		id, err = kr.loadIdentity()
+	} else {
+		id, err = kr.createIdentity()
 	}
 
 	if err != nil {

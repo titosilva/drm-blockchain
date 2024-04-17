@@ -7,6 +7,7 @@ import (
 	"drm-blockchain/src/networking/tunnel"
 	"drm-blockchain/src/networking/udp"
 	"drm-blockchain/src/utils"
+	"net"
 )
 
 type HandshakeHost struct {
@@ -31,8 +32,15 @@ func Open(addr string, cancellation context.Context, di *di.DIContext) (*Handsha
 	return host, nil
 }
 
-func Greet(addr string) {
+func (host *HandshakeHost) Greet(addr string) {
+	udpAddr, _ := net.ResolveUDPAddr("udp", addr)
+	assembly, _ := messages.Assemble(messages.Hello{
+		DestinationAddress: addr,
+		SourceAddress:      host.udpServer.Addr.String(),
+	})
 
+	data, _ := messages.Encode(assembly)
+	host.udpServer.Send(data, udpAddr)
 }
 
 func (host *HandshakeHost) listen() {

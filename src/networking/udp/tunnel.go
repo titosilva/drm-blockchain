@@ -25,6 +25,7 @@ func NewTunnel(server *Server, addr string) *UdpTunnel {
 	}
 
 	r.Recv = multichannel.New[tunnel.Packet]()
+	r.closedChan = multichannel.New[any]()
 
 	return r
 }

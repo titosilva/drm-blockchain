@@ -34,6 +34,7 @@ func Open(addr string) (*Server, error) {
 	server.conn.SetReadBuffer(tunnel.PacketMaxSize)
 	server.Addr = resolved
 	server.Packets = make(chan tunnel.Packet, 256)
+	server.tunnels = safemap.New[string, *UdpTunnel]()
 	server.closed = false
 
 	go server.listen()

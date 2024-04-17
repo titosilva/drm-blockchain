@@ -22,7 +22,7 @@ func SetupServices() *di.DIContext {
 }
 
 func InitializeServices(ctx *di.DIContext) {
-	err := di.GetService[keyrepository.KeyRepository](ctx).Initialize()
+	err := di.GetInterfaceService[keyrepository.IKeyRepository](ctx).Initialize()
 
 	if err != nil {
 		panic(err)

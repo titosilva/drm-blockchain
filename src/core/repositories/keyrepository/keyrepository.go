@@ -7,6 +7,7 @@ import (
 )
 
 type IKeyRepository interface {
+	Initialize() error
 	GetSelfIdentity() *identities.Identity
 }
 
