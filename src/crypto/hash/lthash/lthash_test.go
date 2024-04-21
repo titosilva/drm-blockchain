@@ -35,7 +35,7 @@ func EncryptMessage(key []byte, message []byte) ([]byte, error) {
 
 func Test__LtHash__Should__EnableFileRecoveryEasily(t *testing.T) {
 	file_block_size_bytes := 256
-	encrypted_hash := lthash.New(500, 110, file_block_size_bytes, nil)
+	encrypted_hash := lthash.New(500, 128, file_block_size_bytes, nil)
 
 	file, err := os.Open("test.txt")
 	if err != nil {
@@ -76,7 +76,7 @@ func Test__LtHash__Should__EnableFileRecoveryEasily(t *testing.T) {
 	encrypted_hash.ComputeDigest(encrypted)
 
 	blocks_to_insert := 250
-	nonce_hash := lthash.New(500, 110, file_block_size_bytes, nil)
+	nonce_hash := lthash.New(500, 128, file_block_size_bytes, nil)
 	for i := 0; i < blocks_to_insert; i++ {
 		nonces_and_position := make([]byte, file_block_size_bytes+8)
 		_, err_nonces := rand.Read(nonces_and_position)
@@ -99,13 +99,13 @@ func Test__LtHash__Should__EnableFileRecoveryEasily(t *testing.T) {
 		encrypted = append(encrypted[:position], append(nonces, encrypted[position:]...)...)
 	}
 
-	tampered_hash := lthash.New(500, 110, file_block_size_bytes, nil)
+	tampered_hash := lthash.New(500, 128, file_block_size_bytes, nil)
 	tampered_hash.ComputeDigest(encrypted)
 
 	original_hash_b64 := base64.StdEncoding.EncodeToString(encrypted_hash.GetDigest())
 
-	remove := nonce_hash.GetState().Invert()
-	tampered_hash.Combine(remove)
+	remove := nonce_hash.GetState()
+	tampered_hash.CombineInverse(remove)
 	tampered_hash_b64 := base64.StdEncoding.EncodeToString(tampered_hash.GetDigest())
 	if original_hash_b64 != tampered_hash_b64 {
 		t.Error("Expected LtHash did not match")
