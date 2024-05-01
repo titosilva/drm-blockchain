@@ -15,8 +15,8 @@ type LtHash struct {
 	chunk_count      uint
 	chunk_size_bits  uint
 	block_size_bytes int
-	buf              []byte
 	xof              blake2b.XOF
+	chunk_buf        []byte
 }
 
 func getChunksWithZero(chunk_bits uint, chunk_count uint) []*uintp.UintP {
@@ -40,8 +40,8 @@ func New(chunk_count uint, chunk_size_bits uint, block_size_bytes int, key []byt
 		chunk_count:      chunk_count,
 		chunk_size_bits:  chunk_size_bits,
 		block_size_bytes: block_size_bytes,
-		buf:              make([]byte, chunk_count*chunk_size_bits),
 		xof:              xof,
+		chunk_buf:        make([]byte, chunk_size_bits/8),
 	}
 }
 
@@ -53,15 +53,13 @@ func (hash LtHash) randomizeThenCombine(bytes []byte) {
 	hash.xof.Reset()
 	hash.xof.Write(bytes)
 
-	chunk := make([]byte, hash.chunk_size_bits/8)
-
 	for i := range hash.chunks {
-		_, err := hash.xof.Read(chunk)
+		_, err := hash.xof.Read(hash.chunk_buf)
 		if err != nil {
 			panic(err)
 		}
 
-		hash.chunks[i].AddBytes(chunk)
+		hash.chunks[i].AddBytes(hash.chunk_buf)
 	}
 }
 
@@ -69,15 +67,13 @@ func (hash LtHash) randomizeThenCombineInverse(bytes []byte) {
 	hash.xof.Reset()
 	hash.xof.Write(bytes)
 
-	chunk := make([]byte, hash.chunk_size_bits/8)
-
 	for i := range hash.chunks {
-		_, err := hash.xof.Read(chunk)
+		_, err := hash.xof.Read(hash.chunk_buf)
 		if err != nil {
 			panic(err)
 		}
 
-		hash.chunks[i].SubBytes(chunk)
+		hash.chunks[i].SubBytes(hash.chunk_buf)
 	}
 }
 
