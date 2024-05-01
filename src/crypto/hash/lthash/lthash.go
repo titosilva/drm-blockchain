@@ -62,7 +62,7 @@ func (hash LtHash) randomizeThenCombine(bytes []byte) {
 
 	for i := range hash.chunks {
 		toAdd := hash.buf[uint(i)*hash.chunk_size_bits/8 : uint(i+1)*hash.chunk_size_bits/8]
-		hash.chunks[i].Add(uintp.FromBytes(uint64(hash.chunk_size_bits), toAdd))
+		hash.chunks[i].AddBytes(toAdd)
 	}
 }
 
@@ -76,8 +76,8 @@ func (hash LtHash) randomizeThenCombineInverse(bytes []byte) {
 	}
 
 	for i := range hash.chunks {
-		toAdd := hash.buf[uint(i)*hash.chunk_size_bits/8 : uint(i+1)*hash.chunk_size_bits/8]
-		hash.chunks[i].Sub(uintp.FromBytes(uint64(hash.chunk_size_bits), toAdd))
+		toSub := hash.buf[uint(i)*hash.chunk_size_bits/8 : uint(i+1)*hash.chunk_size_bits/8]
+		hash.chunks[i].SubBytes(toSub)
 	}
 }
 
