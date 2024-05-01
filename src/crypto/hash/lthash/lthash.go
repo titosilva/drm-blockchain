@@ -5,8 +5,6 @@ import (
 	"drm-blockchain/src/crypto/hash"
 	"drm-blockchain/src/math/uintp"
 
-	"io"
-
 	"golang.org/x/crypto/blake2b"
 )
 
@@ -55,14 +53,15 @@ func (hash LtHash) randomizeThenCombine(bytes []byte) {
 	hash.xof.Reset()
 	hash.xof.Write(bytes)
 
-	_, err := io.ReadFull(hash.xof, hash.buf)
-	if err != nil {
-		panic(err)
-	}
+	chunk := make([]byte, hash.chunk_size_bits/8)
 
 	for i := range hash.chunks {
-		toAdd := hash.buf[uint(i)*hash.chunk_size_bits/8 : uint(i+1)*hash.chunk_size_bits/8]
-		hash.chunks[i].AddBytes(toAdd)
+		_, err := hash.xof.Read(chunk)
+		if err != nil {
+			panic(err)
+		}
+
+		hash.chunks[i].AddBytes(chunk)
 	}
 }
 
@@ -70,14 +69,15 @@ func (hash LtHash) randomizeThenCombineInverse(bytes []byte) {
 	hash.xof.Reset()
 	hash.xof.Write(bytes)
 
-	_, err := io.ReadFull(hash.xof, hash.buf)
-	if err != nil {
-		panic(err)
-	}
+	chunk := make([]byte, hash.chunk_size_bits/8)
 
 	for i := range hash.chunks {
-		toSub := hash.buf[uint(i)*hash.chunk_size_bits/8 : uint(i+1)*hash.chunk_size_bits/8]
-		hash.chunks[i].SubBytes(toSub)
+		_, err := hash.xof.Read(chunk)
+		if err != nil {
+			panic(err)
+		}
+
+		hash.chunks[i].SubBytes(chunk)
 	}
 }
 
