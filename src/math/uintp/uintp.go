@@ -60,6 +60,24 @@ func (u *UintP) Add(v *UintP) *UintP {
 	return u
 }
 
+func (u *UintP) AddBytes(bs []byte) *UintP {
+	carry := uint64(0)
+
+	for i := range u.value {
+		toAdd := uint64(bs[i*8+0]) |
+			uint64(bs[i*8+1])<<8 |
+			uint64(bs[i*8+2])<<16 |
+			uint64(bs[i*8+3])<<24 |
+			uint64(bs[i*8+4])<<32 |
+			uint64(bs[i*8+5])<<40 |
+			uint64(bs[i*8+6])<<48 |
+			uint64(bs[i*8+7])<<56
+		u.value[i], carry = bits.Add64(u.value[i], toAdd, carry)
+	}
+
+	return u
+}
+
 func (u *UintP) AddUint(v uint64) *UintP {
 	var carry uint64
 	u.value[0], carry = bits.Add64(u.value[0], v, 0)
@@ -74,6 +92,24 @@ func (u *UintP) Sub(v *UintP) *UintP {
 	borrow := uint64(0)
 	for i := range u.value {
 		u.value[i], borrow = bits.Sub64(u.value[i], v.value[i], borrow)
+	}
+
+	return u
+}
+
+func (u *UintP) SubBytes(bs []byte) *UintP {
+	borrow := uint64(0)
+
+	for i := range u.value {
+		toSub := uint64(bs[i*8+0]) |
+			uint64(bs[i*8+1])<<8 |
+			uint64(bs[i*8+2])<<16 |
+			uint64(bs[i*8+3])<<24 |
+			uint64(bs[i*8+4])<<32 |
+			uint64(bs[i*8+5])<<40 |
+			uint64(bs[i*8+6])<<48 |
+			uint64(bs[i*8+7])<<56
+		u.value[i], borrow = bits.Sub64(u.value[i], toSub, borrow)
 	}
 
 	return u
