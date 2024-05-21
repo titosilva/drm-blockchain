@@ -1,6 +1,7 @@
 package uintp
 
 import (
+	"encoding/hex"
 	"math/bits"
 )
 
@@ -27,21 +28,32 @@ func FromUint(p uint64, u uint64) *UintP {
 	return r
 }
 
+func FromHex(p uint64, s string) *UintP {
+	bs, err := hex.DecodeString(s)
+	if err != nil {
+		panic(err)
+	}
+
+	// reverse bs
+	for i := 0; i < len(bs)/2; i++ {
+		bs[i], bs[len(bs)-1-i] = bs[len(bs)-1-i], bs[i]
+	}
+
+	return FromBytes(p, bs)
+}
+
 func FromBytes(p uint64, bs []byte) *UintP {
 	r := New(p)
-	for i := range r.value {
-		r.value[i] = uint64(bs[i*8+0]) |
-			uint64(bs[i*8+1])<<8 |
-			uint64(bs[i*8+2])<<16 |
-			uint64(bs[i*8+3])<<24 |
-			uint64(bs[i*8+4])<<32 |
-			uint64(bs[i*8+5])<<40 |
-			uint64(bs[i*8+6])<<48 |
-			uint64(bs[i*8+7])<<56
+
+	for i := range bs {
+		if i >= len(r.value)*8 {
+			panic("byte slice is too long")
+		}
+
+		r.value[i/8] |= uint64(bs[i]) << uint64((i%8)*8)
 	}
 
 	return r
-
 }
 
 func Clone(u *UintP) *UintP {
@@ -60,22 +72,34 @@ func (u *UintP) Add(v *UintP) *UintP {
 	return u
 }
 
-func (u *UintP) AddBytes(bs []byte) *UintP {
+func (u *UintP) Mul(v *UintP) *UintP {
+	f := FromUint(u.P, 0)
+
+	for i := range v.value {
+		r := Clone(u)
+		r.MulUint(v.value[i])
+		r.ShiftLeft(uint64(i) * 64)
+		f.Add(r)
+	}
+
+	u.value = f.value
+	return u
+}
+
+func (u *UintP) MulUint(v uint64) *UintP {
 	carry := uint64(0)
 
 	for i := range u.value {
-		toAdd := uint64(bs[i*8+0]) |
-			uint64(bs[i*8+1])<<8 |
-			uint64(bs[i*8+2])<<16 |
-			uint64(bs[i*8+3])<<24 |
-			uint64(bs[i*8+4])<<32 |
-			uint64(bs[i*8+5])<<40 |
-			uint64(bs[i*8+6])<<48 |
-			uint64(bs[i*8+7])<<56
-		u.value[i], carry = bits.Add64(u.value[i], toAdd, carry)
+		nxt_carry, lo := bits.Mul64(u.value[i], v)
+		u.value[i] = lo + carry
+		carry = nxt_carry
 	}
 
 	return u
+}
+
+func (u *UintP) AddBytes(bs []byte) *UintP {
+	return u.Add(FromBytes(u.P, bs[:]))
 }
 
 func (u *UintP) AddUint(v uint64) *UintP {
