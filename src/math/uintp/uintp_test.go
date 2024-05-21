@@ -49,6 +49,11 @@ var testCasesShiftLeft = []struct {
 		"ffffffffffffff000000000000000000",
 		72,
 	},
+	{128,
+		"ffffffffffffffffffffffffffffffff",
+		"fffffffffffffe000000000000000000",
+		73,
+	},
 }
 
 func Test__Uintp__ShiftLeft__ShouldEqual__HardcodedResult(t *testing.T) {
