@@ -6,6 +6,8 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"drm-blockchain/src/crypto/hash/lthash"
+	"drm-blockchain/src/math/uintp"
+	ez "drm-blockchain/src/utils/test"
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
@@ -110,4 +112,21 @@ func Test__LtHash__Should__EnableFileRecoveryEasily(t *testing.T) {
 	if original_hash_b64 != tampered_hash_b64 {
 		t.Error("Expected LtHash did not match")
 	}
+}
+
+func Test__AddMul__Should__BeCyclic(t *testing.T) {
+	m1 := uintp.FromHex(64, "ffffffffffffffff")
+	m2 := uintp.FromHex(64, "cafe")
+
+	hash_mul := lthash.New(1, 64, 256, nil)
+	hash_mul.AddMul(m1, []byte{0x01})
+	hash_mul.AddMul(m2, []byte{0x01})
+
+	m1.Add(m2)
+
+	hash := lthash.New(1, 64, 256, nil)
+	hash.AddMul(m1, []byte{0x01})
+
+	e := ez.New(t)
+	e.AssertAreEqual(hash.GetDigest(), hash_mul.GetDigest())
 }

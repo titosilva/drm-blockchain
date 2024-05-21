@@ -59,7 +59,8 @@ func (hash LtHash) randomizeThenCombine(bytes []byte) {
 			panic(err)
 		}
 
-		hash.chunks[i].AddBytes(hash.chunk_buf)
+		to_add := uintp.FromBytes(uint64(hash.chunk_size_bits), hash.chunk_buf)
+		hash.chunks[i].Add(to_add)
 	}
 }
 
@@ -77,8 +78,28 @@ func (hash LtHash) randomizeThenCombineInverse(bytes []byte) {
 	}
 }
 
+func (hash LtHash) randomizeThenCombineMul(mul *uintp.UintP, bytes []byte) {
+	hash.xof.Reset()
+	hash.xof.Write(bytes)
+
+	for i := range hash.chunks {
+		_, err := hash.xof.Read(hash.chunk_buf)
+		if err != nil {
+			panic(err)
+		}
+
+		to_add := uintp.FromBytes(uint64(hash.chunk_size_bits), hash.chunk_buf)
+		to_add.Mul(mul)
+		hash.chunks[i].Add(to_add)
+	}
+}
+
 func (hash *LtHash) Add(bytes []byte) {
 	hash.randomizeThenCombine(bytes)
+}
+
+func (hash *LtHash) AddMul(mul *uintp.UintP, bytes []byte) {
+	hash.randomizeThenCombineMul(mul, bytes)
 }
 
 func (hash *LtHash) Remove(bytes []byte) {
