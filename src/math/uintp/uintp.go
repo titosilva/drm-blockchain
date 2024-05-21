@@ -171,8 +171,8 @@ func (u *UintP) ShiftLeft(shift uint64) *UintP {
 			u.value[i] = 0
 		}
 
-		if i > 0 {
-			u.value[i] |= u.value[i-1] >> (64 - (shift % 64))
+		if i > int(shift/64) {
+			u.value[i] |= u.value[i-int(shift/64)-1] >> (64 - (shift % 64))
 		}
 	}
 

@@ -36,22 +36,31 @@ func Test__Uintp__Add__ShouldEqual__Sum(t *testing.T) {
 var testCasesShiftLeft = []struct {
 	p      uint64
 	u, exp string
-	shift  uint
+	shift  uint64
 }{
-	{128, "ffffffffffffffff", "fffffffffffffffe00", 9},
+	{64, "ffffffffffffffff", "fffffffffffffe00", 9},
 	{128,
 		"ffffffffffffffffffffffffffffffff",
-		"ffffffffffffffff",
+		"ffffffffffffffff0000000000000000",
 		64,
 	},
 	{128,
 		"ffffffffffffffffffffffffffffffff",
-		"ffffffffffff",
-		80,
+		"ffffffffffffff000000000000000000",
+		72,
 	},
 }
 
 func Test__Uintp__ShiftLeft__ShouldEqual__HardcodedResult(t *testing.T) {
+	for _, tc := range testCasesShiftLeft {
+		ez := ez.New(t)
+
+		u := uintp.FromHex(tc.p, tc.u)
+		exp := uintp.FromHex(tc.p, tc.exp)
+
+		r := u.ShiftLeft(tc.shift)
+		ez.Assert(r.Equals(exp))
+	}
 }
 
 func Test__Uintp__MulUint__PowerOf2__ShouldEqual__ShiftLeft(t *testing.T) {
