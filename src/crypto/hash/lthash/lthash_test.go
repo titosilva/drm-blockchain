@@ -114,19 +114,44 @@ func Test__LtHash__Should__EnableFileRecoveryEasily(t *testing.T) {
 	}
 }
 
-func Test__AddMul__Should__BeCyclic(t *testing.T) {
-	m1 := uintp.FromHex(64, "ffffffffffffffff")
-	m2 := uintp.FromHex(64, "cafe")
+var test_vectors = []struct {
+	chunk_count     uint
+	chunk_size_bits uint
+	m1              string
+	m2              string
+	bytes_to_add    []byte
+}{
+	{1, 64, "ffffffffffffffff", "cafe", []byte{0x01}},
+	{1, 64, "ffffffffffffffff", "cafe", []byte{0x01, 0x02, 0xff, 0xdd}},
+	{128, 64, "ffffffffffffffff", "cafe", []byte{0x01, 0x02, 0xff, 0xdd}},
+	{512, 64, "ffffffffffffffff", "cafe", []byte{0x01, 0x02, 0xff, 0xdd, 0xfe, 0x45}},
+	{1, 128,
+		"ffffffffffffffffffffffffffffffff",
+		"ffffffffffffffffffffffffffffffff",
+		[]byte{0x01},
+	},
+	{512, 128,
+		"ffffffffffffffffffffffffffffffff",
+		"ffffffffffffffffffffffffffffffff",
+		[]byte{0x01, 0x02, 0xff, 0xdd, 0xfe, 0x45},
+	},
+}
 
-	hash_mul := lthash.New(1, 64, 256, nil)
-	hash_mul.AddMul(m1, []byte{0x01})
-	hash_mul.AddMul(m2, []byte{0x01})
+func Test__AddMul__Should__BeHomomorphic(t *testing.T) {
+	for _, vec := range test_vectors {
+		m1 := uintp.FromHex(uint64(vec.chunk_size_bits), vec.m1)
+		m2 := uintp.FromHex(uint64(vec.chunk_size_bits), vec.m2)
 
-	m1.Add(m2)
+		hash_mul := lthash.New(vec.chunk_count, vec.chunk_size_bits, 256, nil)
+		hash_mul.AddMul(m1, vec.bytes_to_add)
+		hash_mul.AddMul(m2, vec.bytes_to_add)
 
-	hash := lthash.New(1, 64, 256, nil)
-	hash.AddMul(m1, []byte{0x01})
+		m1.Add(m2)
 
-	e := ez.New(t)
-	e.AssertAreEqual(hash.GetDigest(), hash_mul.GetDigest())
+		hash := lthash.New(vec.chunk_count, vec.chunk_size_bits, 256, nil)
+		hash.AddMul(m1, vec.bytes_to_add)
+
+		e := ez.New(t)
+		e.AssertAreEqual(hash.GetDigest(), hash_mul.GetDigest())
+	}
 }

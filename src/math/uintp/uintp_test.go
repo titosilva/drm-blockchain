@@ -3,8 +3,56 @@ package uintp_test
 import (
 	"drm-blockchain/src/math/uintp"
 	ez "drm-blockchain/src/utils/test"
+	"encoding/hex"
 	"testing"
 )
+
+var testCasesAdd = []struct {
+	p         uint64
+	u, v, exp string
+}{
+	{128, "ffffffffffffffff", "cafe", "01000000000000cafd"},
+	{128,
+		"ffffffffffffffffffffffffffffffff",
+		"ffffffffffffffffffffffffffffffff",
+		"fffffffffffffffffffffffffffffffe",
+	},
+}
+
+func Test__Uintp__Add__ShouldEqual__Sum(t *testing.T) {
+	for _, tc := range testCasesAdd {
+		ez := ez.New(t)
+
+		u := uintp.FromHex(tc.p, tc.u)
+		v := uintp.FromHex(tc.p, tc.v)
+
+		exp := uintp.FromHex(tc.p, tc.exp)
+
+		r := u.Add(v)
+		ez.Assert(r.Equals(exp))
+	}
+}
+
+var testCasesShiftLeft = []struct {
+	p      uint64
+	u, exp string
+	shift  uint
+}{
+	{128, "ffffffffffffffff", "fffffffffffffffe00", 9},
+	{128,
+		"ffffffffffffffffffffffffffffffff",
+		"ffffffffffffffff",
+		64,
+	},
+	{128,
+		"ffffffffffffffffffffffffffffffff",
+		"ffffffffffff",
+		80,
+	},
+}
+
+func Test__Uintp__ShiftLeft__ShouldEqual__HardcodedResult(t *testing.T) {
+}
 
 func Test__Uintp__MulUint__PowerOf2__ShouldEqual__ShiftLeft(t *testing.T) {
 	u := uintp.FromUint(128, 1)
@@ -24,14 +72,34 @@ func Test__Uintp__MulUint__PowerOf2WithOverflow__ShouldEqual__ShiftLeft(t *testi
 	ez.Assert(r.Equals(v.ShiftLeft(1)))
 }
 
+var testCasesMulUintOverflow = []struct {
+	p         uint64
+	u, v, exp string
+}{
+	{128, "ffffffffffffffffffffffffffffffff", "02", "fffffffffffffffffffffffffffffffe"},
+	{128,
+		"ffffffffffffffffffffffffffffffff",
+		"ffffffffffffffff",
+		"ffffffffffffffff0000000000000001",
+	},
+}
+
 func Test__Uintp__MulUint__PowerOf2WithOverflow__ShouldEqual__HardcodedResult(t *testing.T) {
-	u := uintp.FromBytes(128, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff})
-	v := uintp.FromBytes(128, []byte{0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01})
+	for _, tc := range testCasesMulUintOverflow {
+		u := uintp.FromHex(tc.p, tc.u)
+		bs, _ := hex.DecodeString(tc.v)
+		v := uint64(0)
 
-	r := u.MulUint(uint64(2))
+		for i := range bs {
+			v |= uint64(bs[i]) << uint64(i*8)
+		}
 
-	ez := ez.New(t)
-	ez.Assert(r.Equals(v))
+		r := u.MulUint(v)
+
+		exp := uintp.FromHex(tc.p, tc.exp)
+		ez := ez.New(t)
+		ez.Assert(r.Equals(exp))
+	}
 }
 
 func Test__Uintp__Mul__PowerOf2__ShouldEqual__ShiftLeft(t *testing.T) {
@@ -44,14 +112,37 @@ func Test__Uintp__Mul__PowerOf2__ShouldEqual__ShiftLeft(t *testing.T) {
 	ez.Assert(u.Mul(v).Equals(u_cp.ShiftLeft(32)))
 }
 
+var testCases = []struct {
+	p         uint64
+	u, v, exp string
+}{
+	{128, "ffffffffffffffff", "cafe", "cafdffffffffffff3502"},
+	{128, "ffffffffffffffff", "ffffffffffffffff", "fffffffffffffffe0000000000000001"},
+	{128,
+		"ffffffffffffffffffffffffffffffff",
+		"ffffffffffffffffffffffffffffffff",
+		"01",
+	},
+}
+
 func Test__Uintp__Mul__LargeNumbers__ShouldEqual__RightAnswer(t *testing.T) {
+	for _, tc := range testCases {
+		ez := ez.New(t)
+
+		u := uintp.FromHex(tc.p, tc.u)
+		v := uintp.FromHex(tc.p, tc.v)
+
+		exp := uintp.FromHex(tc.p, tc.exp)
+
+		r := u.Mul(v)
+		ez.Assert(r.Equals(exp))
+	}
+}
+
+func Test__Uintp__FromHex__Should__ConvertCorrectly(t *testing.T) {
 	ez := ez.New(t)
 
-	u := uintp.FromBytes(128, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff})
-	v := uintp.FromBytes(128, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff})
-
-	exp := uintp.FromHex(128, "fffffffffffffffe0000000000000001")
-
-	r := u.Mul(v)
-	ez.Assert(r.Equals(exp))
+	u := uintp.FromHex(128, "01fffffffffffffffe")
+	exp := uintp.FromBytes(128, []byte{0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01})
+	ez.Assert(u.Equals(exp))
 }

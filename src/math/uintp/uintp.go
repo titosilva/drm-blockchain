@@ -160,20 +160,20 @@ func (u *UintP) Equals(v *UintP) bool {
 }
 
 func (u *UintP) ShiftLeft(shift uint64) *UintP {
-	s := shift
+	if shift == 0 {
+		return u
+	}
 
-	carry := uint64(0)
-	carryNew := uint64(0)
-	for i := range u.value {
-		if s >= 64 {
+	for i := len(u.value) - 1; i >= 0; i-- {
+		if i >= int(shift/64) {
+			u.value[i] = u.value[i-int(shift/64)] << (shift % 64)
+		} else {
 			u.value[i] = 0
-			s -= 64
-			continue
 		}
 
-		carryNew = u.value[i] >> (64 - s)
-		u.value[i] = (u.value[i] << s) | carry
-		carry = carryNew
+		if i > 0 {
+			u.value[i] |= u.value[i-1] >> (64 - (shift % 64))
+		}
 	}
 
 	return u
