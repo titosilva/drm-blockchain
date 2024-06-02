@@ -19,7 +19,7 @@ func generateRandomBytes(size int) ([]byte, error) {
 }
 
 func Benchmark__LtHash__1GB(b *testing.B) {
-	lt := lthash.New(500, 128, 1<<12, nil)
+	lt := lthash.NewDirect(500, 128, 1<<12, nil)
 	bs, err := generateRandomBytes(1 << 30)
 	b.ResetTimer()
 
@@ -37,7 +37,7 @@ func Benchmark__LtHash__1GB(b *testing.B) {
 }
 
 func Benchmark__LtHash__1MB(b *testing.B) {
-	lt := lthash.New(512, 128, 256, nil)
+	lt := lthash.NewDirect(512, 128, 256, nil)
 	bs, err := generateRandomBytes(1 << 20)
 	b.ResetTimer()
 
@@ -55,7 +55,7 @@ func Benchmark__LtHash__1MB(b *testing.B) {
 }
 
 func Benchmark__LtHash__1kB(b *testing.B) {
-	lt := lthash.New(512, 128, 256, nil)
+	lt := lthash.NewDirect(512, 128, 256, nil)
 	bs, err := generateRandomBytes(1 << 10)
 	b.ResetTimer()
 

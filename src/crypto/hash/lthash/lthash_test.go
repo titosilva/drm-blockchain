@@ -37,7 +37,7 @@ func EncryptMessage(key []byte, message []byte) ([]byte, error) {
 
 func Test__LtHash__Should__EnableFileRecoveryEasily(t *testing.T) {
 	file_block_size_bytes := 256
-	encrypted_hash := lthash.New(500, 128, file_block_size_bytes, nil)
+	encrypted_hash := lthash.NewDirect(500, 128, file_block_size_bytes, nil)
 
 	file, err := os.Open("test.txt")
 	if err != nil {
@@ -78,7 +78,7 @@ func Test__LtHash__Should__EnableFileRecoveryEasily(t *testing.T) {
 	encrypted_hash.ComputeDigest(encrypted)
 
 	blocks_to_insert := 250
-	nonce_hash := lthash.New(500, 128, file_block_size_bytes, nil)
+	nonce_hash := lthash.NewDirect(500, 128, file_block_size_bytes, nil)
 	for i := 0; i < blocks_to_insert; i++ {
 		nonces_and_position := make([]byte, file_block_size_bytes+8)
 		_, err_nonces := rand.Read(nonces_and_position)
@@ -101,7 +101,7 @@ func Test__LtHash__Should__EnableFileRecoveryEasily(t *testing.T) {
 		encrypted = append(encrypted[:position], append(nonces, encrypted[position:]...)...)
 	}
 
-	tampered_hash := lthash.New(500, 128, file_block_size_bytes, nil)
+	tampered_hash := lthash.NewDirect(500, 128, file_block_size_bytes, nil)
 	tampered_hash.ComputeDigest(encrypted)
 
 	original_hash_b64 := base64.StdEncoding.EncodeToString(encrypted_hash.GetDigest())
@@ -142,14 +142,34 @@ func Test__AddMul__Should__BeHomomorphic(t *testing.T) {
 		m1 := uintp.FromHex(uint64(vec.chunk_size_bits), vec.m1)
 		m2 := uintp.FromHex(uint64(vec.chunk_size_bits), vec.m2)
 
-		hash_mul := lthash.New(vec.chunk_count, vec.chunk_size_bits, 256, nil)
+		hash_mul := lthash.NewDirect(vec.chunk_count, vec.chunk_size_bits, 256, nil)
 		hash_mul.AddMul(m1, vec.bytes_to_add)
 		hash_mul.AddMul(m2, vec.bytes_to_add)
 
 		m1.Add(m2)
 
-		hash := lthash.New(vec.chunk_count, vec.chunk_size_bits, 256, nil)
+		hash := lthash.NewDirect(vec.chunk_count, vec.chunk_size_bits, 256, nil)
 		hash.AddMul(m1, vec.bytes_to_add)
+
+		e := ez.New(t)
+		e.AssertAreEqual(hash.GetDigest(), hash_mul.GetDigest())
+	}
+}
+
+func Test__RemoveMul__Should__BeHomomorphic(t *testing.T) {
+	for _, vec := range test_vectors {
+		m1 := uintp.FromHex(uint64(vec.chunk_size_bits), vec.m1)
+		m2 := uintp.FromHex(uint64(vec.chunk_size_bits), vec.m2)
+
+		hash_mul := lthash.NewDirect(vec.chunk_count, vec.chunk_size_bits, 256, nil)
+		hash_mul.AddMul(m1, vec.bytes_to_add)
+
+		m1.Add(m2)
+
+		hash := lthash.NewDirect(vec.chunk_count, vec.chunk_size_bits, 256, nil)
+		hash.AddMul(m1, vec.bytes_to_add)
+
+		hash.RemoveMul(m2, vec.bytes_to_add)
 
 		e := ez.New(t)
 		e.AssertAreEqual(hash.GetDigest(), hash_mul.GetDigest())

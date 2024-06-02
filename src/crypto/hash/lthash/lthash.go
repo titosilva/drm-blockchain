@@ -2,15 +2,13 @@ package lthash
 
 import (
 	"drm-blockchain/src/collections/structures/list"
-	"drm-blockchain/src/crypto/hash"
 	"drm-blockchain/src/math/uintp"
 
 	"golang.org/x/crypto/blake2b"
 )
 
-var _ hash.HomHashAlgorithm = &LtHash{}
-
 type LtHash struct {
+	ModulusBitsize   uint64
 	chunks           []*uintp.UintP
 	chunk_count      uint
 	chunk_size_bits  uint
@@ -29,7 +27,25 @@ func getChunksWithZero(chunk_bits uint, chunk_count uint) []*uintp.UintP {
 	return chunks
 }
 
-func New(chunk_count uint, chunk_size_bits uint, block_size_bytes int, key []byte) LtHash {
+func New(chunk_count uint, chunk_size_bits uint, block_size_bytes int, key []byte) *LtHash {
+	xof, err := blake2b.NewXOF(uint32(chunk_count*chunk_size_bits), key)
+	if err != nil {
+		panic(err)
+	}
+
+	r := new(LtHash)
+	r.chunks = getChunksWithZero(chunk_size_bits, chunk_count)
+	r.chunk_count = chunk_count
+	r.chunk_size_bits = chunk_size_bits
+	r.block_size_bytes = block_size_bytes
+	r.ModulusBitsize = uint64(chunk_size_bits)
+	r.xof = xof
+	r.chunk_buf = make([]byte, chunk_size_bits/8)
+
+	return r
+}
+
+func NewDirect(chunk_count uint, chunk_size_bits uint, block_size_bytes int, key []byte) LtHash {
 	xof, err := blake2b.NewXOF(uint32(chunk_count*chunk_size_bits), key)
 	if err != nil {
 		panic(err)
@@ -40,6 +56,7 @@ func New(chunk_count uint, chunk_size_bits uint, block_size_bytes int, key []byt
 		chunk_count:      chunk_count,
 		chunk_size_bits:  chunk_size_bits,
 		block_size_bytes: block_size_bytes,
+		ModulusBitsize:   uint64(chunk_size_bits),
 		xof:              xof,
 		chunk_buf:        make([]byte, chunk_size_bits/8),
 	}
@@ -106,6 +123,10 @@ func (hash *LtHash) Remove(bytes []byte) {
 	hash.randomizeThenCombineInverse(bytes)
 }
 
+func (hash *LtHash) RemoveMul(mul *uintp.UintP, bytes []byte) {
+	hash.randomizeThenCombineMul(mul.Inverse(), bytes)
+}
+
 func (hash *LtHash) ComputeDigest(bytes []byte) {
 	offset := 0
 
@@ -142,6 +163,17 @@ func (hash *LtHash) Combine(state []*uintp.UintP) {
 	for i := range hash.chunks {
 		hash.chunks[i].Add(state[i])
 	}
+}
+
+func (hash *LtHash) CombineBytes(state []byte) {
+	toCombine := make([]*uintp.UintP, hash.chunk_count)
+
+	for i := 0; i < len(state); i += int(hash.ModulusBitsize / 8) {
+		block := state[i : i+int(hash.ModulusBitsize)]
+		toCombine[i/int(hash.ModulusBitsize/8)] = uintp.FromBytes(hash.ModulusBitsize, block)
+	}
+
+	hash.Combine(toCombine)
 }
 
 func (hash *LtHash) CombineInverse(state []*uintp.UintP) {

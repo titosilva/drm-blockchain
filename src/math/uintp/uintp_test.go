@@ -160,3 +160,11 @@ func Test__Uintp__FromHex__Should__ConvertCorrectly(t *testing.T) {
 	exp := uintp.FromBytes(128, []byte{0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01})
 	ez.Assert(u.Equals(exp))
 }
+
+func Test__Uintp__SetBit__Should__EqualShiftLeft__WhenOtherBitsAreZero(t *testing.T) {
+	u := uintp.FromUint(128, 0)
+	v := uintp.FromUint(128, 1)
+
+	ez := ez.New(t)
+	ez.Assert(u.SetBit(3, true).Equals(v.ShiftLeft(3)))
+}

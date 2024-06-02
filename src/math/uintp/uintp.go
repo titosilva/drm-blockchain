@@ -5,19 +5,22 @@ import (
 	"math/bits"
 )
 
+// UintP is a big integer with a modulus of 2^ModulusBitsize
+// It uses uint64 operations to perform arithmetic operations more efficiently
+// Because of this, the log of the modulus must be a multiple of 64
 type UintP struct {
-	P     uint64
-	value []uint64
+	ModulusBitsize uint64
+	value          []uint64
 }
 
-func New(p uint64) *UintP {
-	if p%64 != 0 {
+func New(modBitsize uint64) *UintP {
+	if modBitsize%64 != 0 {
 		panic("p must be a multiple of 64")
 	}
 
 	return &UintP{
-		P:     p,
-		value: make([]uint64, p/64),
+		ModulusBitsize: modBitsize,
+		value:          make([]uint64, modBitsize/64),
 	}
 }
 
@@ -47,7 +50,7 @@ func FromBytes(p uint64, bs []byte) *UintP {
 
 	for i := range bs {
 		if i >= len(r.value)*8 {
-			panic("byte slice is too long")
+			break
 		}
 
 		r.value[i/8] |= uint64(bs[i]) << uint64((i%8)*8)
@@ -58,8 +61,8 @@ func FromBytes(p uint64, bs []byte) *UintP {
 
 func Clone(u *UintP) *UintP {
 	return &UintP{
-		P:     u.P,
-		value: append([]uint64{}, u.value...),
+		ModulusBitsize: u.ModulusBitsize,
+		value:          append([]uint64{}, u.value...),
 	}
 }
 
@@ -73,7 +76,7 @@ func (u *UintP) Add(v *UintP) *UintP {
 }
 
 func (u *UintP) Mul(v *UintP) *UintP {
-	f := FromUint(u.P, 0)
+	f := FromUint(u.ModulusBitsize, 0)
 
 	for i := range v.value {
 		r := Clone(u)
@@ -99,7 +102,7 @@ func (u *UintP) MulUint(v uint64) *UintP {
 }
 
 func (u *UintP) AddBytes(bs []byte) *UintP {
-	return u.Add(FromBytes(u.P, bs[:]))
+	return u.Add(FromBytes(u.ModulusBitsize, bs[:]))
 }
 
 func (u *UintP) AddUint(v uint64) *UintP {
@@ -140,7 +143,7 @@ func (u *UintP) SubBytes(bs []byte) *UintP {
 }
 
 func (u *UintP) Inverse() *UintP {
-	r := New(u.P)
+	r := New(u.ModulusBitsize)
 	for i := range u.value {
 		r.value[i] = ^u.value[i]
 	}
@@ -180,7 +183,8 @@ func (u *UintP) ShiftLeft(shift uint64) *UintP {
 }
 
 func (u *UintP) Bytes() []byte {
-	r := make([]byte, len(u.value)*8)
+	r := make([]byte, u.ModulusBitsize/8)
+
 	for i, v := range u.value {
 		r[i*8+0] = byte(v >> 0)
 		r[i*8+1] = byte(v >> 8)
@@ -193,4 +197,26 @@ func (u *UintP) Bytes() []byte {
 	}
 
 	return r
+}
+
+func (u *UintP) Bit(index uint64) byte {
+	if index >= u.ModulusBitsize {
+		panic("index out of range")
+	}
+
+	return byte(u.value[index/64] & (1 << (index % 64)))
+}
+
+func (u *UintP) SetBit(index uint64, bit bool) *UintP {
+	if index >= u.ModulusBitsize {
+		panic("index out of range")
+	}
+
+	if bit {
+		u.value[index/64] |= 1 << (index % 64)
+	} else {
+		u.value[index/64] &= ^(1 << (index % 64))
+	}
+
+	return u
 }
