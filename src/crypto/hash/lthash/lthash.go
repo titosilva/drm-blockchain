@@ -156,7 +156,7 @@ func (hash LtHash) GetState() []*uintp.UintP {
 		r[i] = uintp.Clone(hash.chunks[i])
 	}
 
-	return hash.chunks
+	return r
 }
 
 func (hash *LtHash) Combine(state []*uintp.UintP) {
