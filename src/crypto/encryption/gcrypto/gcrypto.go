@@ -1,7 +1,7 @@
 package gcrypto
 
 import (
-	"drm-blockchain/src/crypto/random"
+	"crypto/sha256"
 	"drm-blockchain/src/crypto/random/drbg/sha256drbg"
 	"drm-blockchain/src/math/uintp"
 )
@@ -22,11 +22,11 @@ func (g *GCrypto) Encrypt(data []byte, key []byte) []byte {
 	encoded := g.Encode(data)
 	encrypted := g.EncryptEncoded(encoded, key)
 
-	return toBytes(encrypted)
+	return g.ToBytes(encrypted)
 }
 
 func (g *GCrypto) Decrypt(data []byte, key []byte) []byte {
-	decryptedEncoded := g.DecryptEncoded(g.fromBytes(data), key)
+	decryptedEncoded := g.DecryptEncoded(g.FromBytes(data), key)
 	decoded := g.Decode(decryptedEncoded)
 
 	return decoded
@@ -35,20 +35,24 @@ func (g *GCrypto) Decrypt(data []byte, key []byte) []byte {
 func (g *GCrypto) EncodeToBytes(data []byte) []byte {
 	encoded := g.Encode(data)
 
-	return toBytes(encoded)
+	return g.ToBytes(encoded)
 }
 
 func (g *GCrypto) Encode(data []byte) []*uintp.UintP {
 	// Encodes each bit in data to a randomly generated number,
 	// being even or odd depending on the bit value
 	r := make([]*uintp.UintP, len(data)*8)
+	drbg := sha256drbg.New()
+	seed := sha256.Sum256(data)
+	drbg.Seed(seed[:])
 
 	for i := 0; i < len(data)*8; i++ {
-		u, err := random.GenerateUintp(g.modulusBitsize)
+		bs, err := drbg.Generate(int(g.modulusBitsize) / 8)
 		if err != nil {
 			panic(err)
 		}
 
+		u := uintp.FromBytes(g.modulusBitsize, bs)
 		u.SetBit(0, data[i/8]&(1<<(i%8)) != 0)
 		r[i] = u
 	}
@@ -56,14 +60,14 @@ func (g *GCrypto) Encode(data []byte) []*uintp.UintP {
 	return r
 }
 
-func (g *GCrypto) ExpandKey(key []byte, length int) []*uintp.UintP {
+func (g *GCrypto) ExpandKey(key []byte, lengthBlocks int) []*uintp.UintP {
 	// Expands the key to the desired length using a DRBG
 	drbg := sha256drbg.New()
 	drbg.Seed(key)
 
-	r := make([]*uintp.UintP, length)
+	r := make([]*uintp.UintP, lengthBlocks)
 
-	for i := 0; i < length; i++ {
+	for i := 0; i < lengthBlocks; i++ {
 		generated, _ := drbg.Generate(int(g.modulusBitsize / 8))
 		r[i] = uintp.FromBytes(g.modulusBitsize, generated)
 	}
@@ -71,10 +75,10 @@ func (g *GCrypto) ExpandKey(key []byte, length int) []*uintp.UintP {
 	return r
 }
 
-func (g *GCrypto) EncodeKeyToBytes(key []byte, length int) []byte {
-	expandedKey := g.ExpandKey(key, length)
+func (g *GCrypto) ExpandKeyToBytes(key []byte, lengthBlocks int) []byte {
+	expandedKey := g.ExpandKey(key, lengthBlocks)
 
-	return toBytes(expandedKey)
+	return g.ToBytes(expandedKey)
 }
 
 func (g *GCrypto) Decode(encodedData []*uintp.UintP) []byte {
@@ -112,8 +116,8 @@ func (g *GCrypto) DecryptEncoded(encryptedData []*uintp.UintP, key []byte) []*ui
 	return r
 }
 
-func toBytes(data []*uintp.UintP) []byte {
-	r := make([]byte, (len(data)*int(data[0].ModulusBitsize)+7)/8)
+func (g GCrypto) ToBytes(data []*uintp.UintP) []byte {
+	r := make([]byte, len(data)*int(g.modulusBitsize)/8)
 
 	for i := range data {
 		bs := data[i].Bytes()
@@ -125,7 +129,7 @@ func toBytes(data []*uintp.UintP) []byte {
 	return r
 }
 
-func (g GCrypto) fromBytes(data []byte) []*uintp.UintP {
+func (g GCrypto) FromBytes(data []byte) []*uintp.UintP {
 	r := make([]*uintp.UintP, (len(data)*8+int(g.modulusBitsize)-1)/int(g.modulusBitsize))
 
 	for i := 0; i < len(r); i++ {

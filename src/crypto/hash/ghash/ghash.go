@@ -1,6 +1,7 @@
 package ghash
 
 import (
+	"drm-blockchain/src/crypto/encryption/gcrypto"
 	"drm-blockchain/src/crypto/hash/lthash"
 	"drm-blockchain/src/math/uintp"
 )
@@ -79,16 +80,26 @@ func (hash *GHash) GetState() []*uintp.UintP {
 }
 
 func (hash *GHash) AddBytes(data []byte) {
-	for i := 0; i < len(data); i += int(hash.lthash.ModulusBitsize / 8) {
-		block := data[i:min(i+int(hash.lthash.ModulusBitsize/8), len(data))]
-		hash.AddBlockWithIndex(block, uint(i))
+	crypt := gcrypto.New(hash.lthash.ModulusBitsize)
+	blocks := crypt.FromBytes(data)
+	hash.AddBlocks(blocks)
+}
+
+func (hash *GHash) AddBlocks(blocks []*uintp.UintP) {
+	for i := 0; i < len(blocks); i++ {
+		hash.AddBlockWithIndex(blocks[i], uint(i))
 	}
 }
 
 func (hash *GHash) RemoveBytes(data []byte) {
-	for i := 0; i < len(data); i += int(hash.lthash.ModulusBitsize / 8) {
-		block := data[i:min(i+int(hash.lthash.ModulusBitsize/8), len(data))]
-		hash.RemoveBlockWithIndex(block, uint(i))
+	crypt := gcrypto.New(hash.lthash.ModulusBitsize)
+	blocks := crypt.FromBytes(data)
+	hash.RemoveBlocks(blocks)
+}
+
+func (hash *GHash) RemoveBlocks(blocks []*uintp.UintP) {
+	for i := 0; i < len(blocks); i++ {
+		hash.RemoveBlockWithIndex(blocks[i], uint(i))
 	}
 }
 
@@ -100,14 +111,12 @@ func (hash *GHash) Remove(u []*uintp.UintP) {
 	hash.lthash.CombineInverse(u)
 }
 
-func (hash *GHash) AddBlockWithIndex(block []byte, index uint) {
-	mul := uintp.FromBytes(hash.lthash.ModulusBitsize, block)
-	hash.lthash.AddMul(mul, []byte{byte(index)})
+func (hash *GHash) AddBlockWithIndex(block *uintp.UintP, index uint) {
+	hash.lthash.AddMul(block, []byte{byte(index)})
 }
 
-func (hash *GHash) RemoveBlockWithIndex(block []byte, index uint) {
-	mul := uintp.FromBytes(hash.lthash.ModulusBitsize, block)
-	hash.lthash.RemoveMul(mul, []byte{byte(index)})
+func (hash *GHash) RemoveBlockWithIndex(block *uintp.UintP, index uint) {
+	hash.lthash.RemoveMul(block, []byte{byte(index)})
 }
 
 func (hash GHash) GetDigest() []byte {
