@@ -57,11 +57,7 @@ func (hash *GHash) SetNonceState(nonceState []*uintp.UintP) {
 
 func (hash *GHash) GetNonceHash() []byte {
 	r := make([]byte, len(hash.nonceHash))
-
-	for i := range hash.nonceHash {
-		r[i] = hash.nonceHash[i]
-	}
-
+	copy(r, hash.nonceHash)
 	return r
 }
 
