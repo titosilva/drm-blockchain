@@ -43,6 +43,10 @@ func (hash *GHash) RemoveNonce(nonce []byte) {
 	hash.lthash.Remove(nonce)
 }
 
+func (hash *GHash) RemoveNonceState(nonceState []*uintp.UintP) {
+	hash.lthash.CombineInverse(nonceState)
+}
+
 func (hash *GHash) SetNonceState(nonceState []*uintp.UintP) {
 	hash.lthash.Reset()
 	hash.lthash.Combine(nonceState)
@@ -51,25 +55,49 @@ func (hash *GHash) SetNonceState(nonceState []*uintp.UintP) {
 }
 
 func (hash *GHash) GetNonceHash() []byte {
-	return hash.nonceHash
+	r := make([]byte, len(hash.nonceHash))
+
+	for i := range hash.nonceHash {
+		r[i] = hash.nonceHash[i]
+	}
+
+	return r
 }
 
 func (hash *GHash) GetNonceState() []*uintp.UintP {
-	return hash.nonceState
+	r := make([]*uintp.UintP, len(hash.nonceState))
+
+	for i := range hash.nonceState {
+		r[i] = uintp.Clone(hash.nonceState[i])
+	}
+
+	return r
 }
 
-func (hash *GHash) Add(data []byte) {
+func (hash *GHash) GetState() []*uintp.UintP {
+	return hash.lthash.GetState()
+}
+
+func (hash *GHash) AddBytes(data []byte) {
 	for i := 0; i < len(data); i += int(hash.lthash.ModulusBitsize / 8) {
-		block := data[i:min(i+int(hash.lthash.ModulusBitsize), len(data))]
+		block := data[i:min(i+int(hash.lthash.ModulusBitsize/8), len(data))]
 		hash.AddBlockWithIndex(block, uint(i))
 	}
 }
 
-func (hash *GHash) Remove(data []byte) {
+func (hash *GHash) RemoveBytes(data []byte) {
 	for i := 0; i < len(data); i += int(hash.lthash.ModulusBitsize / 8) {
-		block := data[i:min(i+int(hash.lthash.ModulusBitsize), len(data))]
+		block := data[i:min(i+int(hash.lthash.ModulusBitsize/8), len(data))]
 		hash.RemoveBlockWithIndex(block, uint(i))
 	}
+}
+
+func (hash *GHash) Add(u []*uintp.UintP) {
+	hash.lthash.Combine(u)
+}
+
+func (hash *GHash) Remove(u []*uintp.UintP) {
+	hash.lthash.CombineInverse(u)
 }
 
 func (hash *GHash) AddBlockWithIndex(block []byte, index uint) {
