@@ -18,7 +18,11 @@ type GHash struct {
 	key        []byte
 }
 
-func New(chunk_count uint, chunk_size_bits uint, block_size_bytes int, key []byte) *GHash {
+func New(modulusBitsize uint) *GHash {
+	return NewWithParams(512, modulusBitsize, 16, nil)
+}
+
+func NewWithParams(chunk_count uint, chunk_size_bits uint, block_size_bytes int, key []byte) *GHash {
 	r := new(GHash)
 	r.lthash = lthash.New(chunk_count, chunk_size_bits, block_size_bytes, key)
 	r.key = key
@@ -97,14 +101,6 @@ func (hash *GHash) RemoveBlocks(blocks []*uintp.UintP) {
 	for i := 0; i < len(blocks); i++ {
 		hash.RemoveBlockWithIndex(blocks[i], uint(i))
 	}
-}
-
-func (hash *GHash) Add(u []*uintp.UintP) {
-	hash.lthash.Combine(u)
-}
-
-func (hash *GHash) Remove(u []*uintp.UintP) {
-	hash.lthash.CombineInverse(u)
 }
 
 func (hash *GHash) AddBlockWithIndex(block *uintp.UintP, index uint) {

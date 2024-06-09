@@ -1,0 +1,1 @@
+package ghash_test
