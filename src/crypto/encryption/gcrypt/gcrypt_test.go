@@ -1,7 +1,7 @@
-package gcrypto_test
+package gcrypt_test
 
 import (
-	"drm-blockchain/src/crypto/encryption/gcrypto"
+	"drm-blockchain/src/crypto/encryption/gcrypt"
 	"drm-blockchain/src/crypto/random"
 	ez "drm-blockchain/src/utils/test"
 	"testing"
@@ -11,7 +11,7 @@ func Test__GCrypto__EncryptThenDecrypt__Should__ReturnOriginalValue(t *testing.T
 	data := []byte("Hello, World!")
 	key := []byte("This is a key")
 
-	g := gcrypto.New(128)
+	g := gcrypt.New(128)
 	encrypted := g.Encrypt(data, key)
 	decrypted := g.Decrypt(encrypted, key)
 
@@ -23,7 +23,7 @@ func Test__GCrypto__EncryptThenDecrypt__Should__ReturnOriginalValue(t *testing.T
 func Test__GCrypto__ToBytesThenFromBytes__Should__ReturnOriginalValue(t *testing.T) {
 	data := []byte("Hello, World!")
 
-	g := gcrypto.New(128)
+	g := gcrypt.New(128)
 	encoded := g.EncodeToBytes(data)
 	decoded := g.Decode(g.FromBytes(encoded))
 
@@ -34,7 +34,7 @@ func Test__GCrypto__ToBytesThenFromBytes__Should__ReturnOriginalValue(t *testing
 
 func Test__GCrypto__ToBytesThenFromBytes__Should__ReturnOriginalValue2(t *testing.T) {
 	ez := ez.New(t)
-	crypt := gcrypto.New(64)
+	crypt := gcrypt.New(64)
 
 	rnd, _ := random.GenerateBytes(1)
 	data := crypt.EncodeToBytes(rnd)

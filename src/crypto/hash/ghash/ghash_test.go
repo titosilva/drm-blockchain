@@ -1,7 +1,7 @@
 package ghash_test
 
 import (
-	"drm-blockchain/src/crypto/encryption/gcrypto"
+	"drm-blockchain/src/crypto/encryption/gcrypt"
 	"drm-blockchain/src/crypto/hash/ghash"
 	"drm-blockchain/src/crypto/random"
 	"drm-blockchain/src/math/uintp"
@@ -28,7 +28,7 @@ func Test__GHash__AddThenRemove__ShouldEqual__Original(t *testing.T) {
 
 func Test__GHash__AddThenRemove__ShouldEqual__Original__WithGCryptoMethodsWithoutByteConversion(t *testing.T) {
 	ez := ez.New(t)
-	crypt := gcrypto.New(64)
+	crypt := gcrypt.New(64)
 
 	rnd, _ := random.GenerateBytes(1)
 	encData := crypt.Encode(rnd)
@@ -53,7 +53,7 @@ func Test__GHash__AddThenRemove__ShouldEqual__Original__WithGCryptoMethodsWithou
 
 func Test__GHash__AddBytesAndAddBlocks__ShouldEqual(t *testing.T) {
 	ez := ez.New(t)
-	crypt := gcrypto.New(64)
+	crypt := gcrypt.New(64)
 
 	rnd, _ := random.GenerateBytes(1)
 	data := crypt.EncodeToBytes(rnd)
@@ -80,7 +80,7 @@ func Test__GHash__AddBytesAndAddBlocks__ShouldEqual(t *testing.T) {
 
 func Test__GHash__AddThenRemove__ShouldEqual__Original__WithGCryptoMethodsWithByteConversions(t *testing.T) {
 	ez := ez.New(t)
-	crypt := gcrypto.New(64)
+	crypt := gcrypt.New(64)
 
 	rnd, _ := random.GenerateBytes(1)
 	data := crypt.EncodeToBytes(rnd)
@@ -114,7 +114,7 @@ func Test__GHashOverGCrypto(t *testing.T) {
 	data := []byte("Hello, World!")
 	key := []byte("This is a key")
 
-	crypt := gcrypto.New(64)
+	crypt := gcrypt.New(64)
 
 	dataHash := ghash.NewWithParams(1, 64, 128, nil)
 	encodedData := crypt.Encode(data)
@@ -140,7 +140,7 @@ func Test__GHashOverGCrypto__WithNonces(t *testing.T) {
 	data := []byte("Hello, World!")
 	key := []byte("This is a key")
 
-	crypt := gcrypto.New(64)
+	crypt := gcrypt.New(64)
 
 	dataHash := ghash.NewWithParams(1, 64, 128, nil)
 	dataHash.SetNonce([]byte("This is a nonce"))

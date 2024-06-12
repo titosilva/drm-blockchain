@@ -2,7 +2,7 @@ package ghash_test
 
 import (
 	"crypto/rand"
-	"drm-blockchain/src/crypto/encryption/gcrypto"
+	"drm-blockchain/src/crypto/encryption/gcrypt"
 	"drm-blockchain/src/crypto/hash/ghash"
 	"drm-blockchain/src/math/uintp"
 	"reflect"
@@ -22,15 +22,15 @@ func generateRandomBytes(size int) ([]byte, error) {
 }
 
 func hashThenEncrypt(data []byte, key []byte, modulusBitsize uint64, block_size_bits int) ([]byte, []*uintp.UintP, []byte) {
-	crypt := gcrypto.New(modulusBitsize)
+	crypt := gcrypt.New(modulusBitsize)
 
-	dataHash := ghash.NewWithParams(500, uint(modulusBitsize), block_size_bits, nil)
+	dataHash := ghash.NewWithParams(500, uint(modulusBitsize), block_size_bits/8, nil)
 	dataHash.SetNonce([]byte("This is a nonce"))
 	dataNonceState := dataHash.GetNonceState()
 	encodedDataBytes := crypt.EncodeToBytes(data)
 	dataHash.AddBytes(encodedDataBytes)
 
-	keyHash := ghash.NewWithParams(500, uint(modulusBitsize), block_size_bits, nil)
+	keyHash := ghash.NewWithParams(500, uint(modulusBitsize), block_size_bits/8, nil)
 	keyHash.SetNonce([]byte("This is a key nonce"))
 	keyNonceState := keyHash.GetNonceState()
 
@@ -44,7 +44,7 @@ func hashThenEncrypt(data []byte, key []byte, modulusBitsize uint64, block_size_
 }
 
 func hashEncrypted(encrypted []byte, encryptedNonceState []*uintp.UintP, modulusBitsize uint64, block_size_bits int) []*uintp.UintP {
-	encryptedHash := ghash.NewWithParams(500, uint(modulusBitsize), block_size_bits, nil)
+	encryptedHash := ghash.NewWithParams(500, uint(modulusBitsize), block_size_bits/8, nil)
 	encryptedHash.SetNonceState(encryptedNonceState)
 	encryptedHash.AddBytes(encrypted)
 
@@ -52,24 +52,24 @@ func hashEncrypted(encrypted []byte, encryptedNonceState []*uintp.UintP, modulus
 }
 
 func verifyHash(encryptedHashState []*uintp.UintP, encrypted []byte, key []byte, modulusBitsize uint64, block_size_bits int) {
-	crypt := gcrypto.New(modulusBitsize)
+	crypt := gcrypt.New(modulusBitsize)
 	encodedKey := crypt.ExpandKeyToBytes(key, len(encrypted))
 
-	encryptedHashObj := ghash.NewWithParams(500, uint(modulusBitsize), block_size_bits, nil)
+	encryptedHashObj := ghash.NewWithParams(500, uint(modulusBitsize), block_size_bits/8, nil)
 	encryptedHashObj.SetNonceState(encryptedHashState)
 	encryptedHashObj.RemoveBytes(encodedKey)
 	encryptedHashObj.RemoveNonce([]byte("This is a key nonce"))
 }
 
 func decrypt(encrypted []byte, key []byte, modulusBitsize uint64) []byte {
-	crypt := gcrypto.New(modulusBitsize)
+	crypt := gcrypt.New(modulusBitsize)
 	return crypt.Decrypt(encrypted, key)
 }
 
 func runPdpr(data []byte, key []byte, modulusBitsize uint64, block_size_bits int) {
-	crypt := gcrypto.New(modulusBitsize)
+	crypt := gcrypt.New(modulusBitsize)
 
-	dataHash := ghash.NewWithParams(500, uint(modulusBitsize), block_size_bits, nil)
+	dataHash := ghash.NewWithParams(500, uint(modulusBitsize), block_size_bits/8, nil)
 	dataHash.SetNonce([]byte("This is a nonce"))
 	dataNonceState := dataHash.GetNonceState()
 	encodedData := crypt.Encode(data)
@@ -77,7 +77,7 @@ func runPdpr(data []byte, key []byte, modulusBitsize uint64, block_size_bits int
 	dataHash.AddBytes(encodedDataBytes)
 	dataDigest := dataHash.GetDigest()
 
-	keyHash := ghash.NewWithParams(500, uint(modulusBitsize), block_size_bits, nil)
+	keyHash := ghash.NewWithParams(500, uint(modulusBitsize), block_size_bits/8, nil)
 	keyHash.SetNonce([]byte("This is a key nonce"))
 	keyNonceState := keyHash.GetNonceState()
 
@@ -87,7 +87,7 @@ func runPdpr(data []byte, key []byte, modulusBitsize uint64, block_size_bits int
 		dataNonceState[i].Add(keyNonceState[i])
 	}
 
-	encryptedHash := ghash.NewWithParams(500, uint(modulusBitsize), block_size_bits, nil)
+	encryptedHash := ghash.NewWithParams(500, uint(modulusBitsize), block_size_bits/8, nil)
 	encryptedHash.SetNonceState(dataNonceState)
 	encryptedHash.AddBytes(encrypted)
 	encodedKey := crypt.ExpandKeyToBytes(key, len(encodedData))

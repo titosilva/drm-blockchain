@@ -1,7 +1,7 @@
 package ghash
 
 import (
-	"drm-blockchain/src/crypto/encryption/gcrypto"
+	"drm-blockchain/src/crypto/encryption/gcrypt"
 	"drm-blockchain/src/crypto/hash/lthash"
 	"drm-blockchain/src/math/uintp"
 )
@@ -80,7 +80,7 @@ func (hash *GHash) GetState() []*uintp.UintP {
 }
 
 func (hash *GHash) AddBytes(data []byte) {
-	crypt := gcrypto.New(hash.lthash.ModulusBitsize)
+	crypt := gcrypt.New(hash.lthash.ModulusBitsize)
 	blocks := crypt.FromBytes(data)
 	hash.AddBlocks(blocks)
 }
@@ -92,7 +92,7 @@ func (hash *GHash) AddBlocks(blocks []*uintp.UintP) {
 }
 
 func (hash *GHash) RemoveBytes(data []byte) {
-	crypt := gcrypto.New(hash.lthash.ModulusBitsize)
+	crypt := gcrypt.New(hash.lthash.ModulusBitsize)
 	blocks := crypt.FromBytes(data)
 	hash.RemoveBlocks(blocks)
 }
