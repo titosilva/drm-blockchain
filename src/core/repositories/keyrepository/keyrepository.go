@@ -25,6 +25,7 @@ const (
 func DIFactory(ctx *di.DIContext) IKeyRepository {
 	kr := new(KeyRepository)
 	kr.bs = di.GetInterfaceService[blobstore.BlobStore](ctx)
+	kr.Initialize()
 	return kr
 }
 

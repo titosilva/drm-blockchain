@@ -23,7 +23,7 @@ type HandshakeHost struct {
 	keyRepo      keyrepository.IKeyRepository
 }
 
-func Open(addr string, cancellation context.Context, diCtx *di.DIContext) (*HandshakeHost, error) {
+func NewHost(addr string, cancellation context.Context, diCtx *di.DIContext) (*HandshakeHost, error) {
 	udpServer, err := udp.Open(addr)
 	if err != nil {
 		return nil, err
@@ -43,13 +43,13 @@ func (host *HandshakeHost) GetNodeAddress() string {
 	return host.keyRepo.GetSelfIdentity().GetAddress()
 }
 
-func (host *HandshakeHost) Greet(nodeAddr string, addr string) {
+func (host *HandshakeHost) Greet(nodeAddr string, netAddr string) string {
 	assembly, _ := messages.Assemble(messages.Hello{
 		DestinationAddress: nodeAddr,
 		SourceAddress:      host.GetNodeAddress(),
 	})
 
-	udpAddr, _ := net.ResolveUDPAddr("udp", addr)
+	udpAddr, _ := net.ResolveUDPAddr("udp", netAddr)
 	data, _ := messages.Encode(assembly)
 	tun := host.udpServer.Tunnel(udpAddr.String())
 	tun.Send(data)
@@ -82,7 +82,7 @@ func (host *HandshakeHost) Greet(nodeAddr string, addr string) {
 	tun.Send(challengeRespData)
 
 	secret, _ := nodeId.DeriveSecret(ephKey)
-	println(hex.EncodeToString(secret))
+	return hex.EncodeToString(secret)
 }
 
 func (host *HandshakeHost) listen() {

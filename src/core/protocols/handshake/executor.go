@@ -29,10 +29,10 @@ func New(keyRepo keyrepository.IKeyRepository) *Executor {
 	return ex
 }
 
-func (ex *Executor) Execute(helloMsg *messages.Hello, tun tunnel.Tunnel) {
+func (ex *Executor) Execute(helloMsg *messages.Hello, tun tunnel.Tunnel) string {
 	_, err := ex.verifyMsg(helloMsg)
 	if err != nil {
-		return
+		return ""
 	}
 
 	nonce, _ := random.GenerateBytes(32)
@@ -64,7 +64,7 @@ func (ex *Executor) Execute(helloMsg *messages.Hello, tun tunnel.Tunnel) {
 	ephPubKey, _ := identitykeys.GetECDHCurve().NewPublicKey(challengeResp.EphemeralPubKey)
 	secret, _ := ex.keyRepo.GetSelfIdentity().RestoreSecret(ephPubKey)
 
-	println(hex.EncodeToString(secret))
+	return hex.EncodeToString(secret)
 }
 
 func (ex *Executor) verifyMsg(helloMsg *messages.Hello) (*identities.Identity, error) {

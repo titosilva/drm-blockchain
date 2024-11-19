@@ -6,51 +6,51 @@ import (
 )
 
 type DIContext struct {
-	SingletonInstances map[string]any
-	SingletonFactories map[string]any
-	Factories          map[string]any
+	singletonInstances map[string]any
+	singletonFactories map[string]any
+	factories          map[string]any
 
-	InterfaceSingletonInstances map[string]any
-	InterfaceSingletonFactories map[string]any
-	InterfaceFactories          map[string]any
+	interfaceSingletonInstances map[string]any
+	interfaceSingletonFactories map[string]any
+	interfaceFactories          map[string]any
 }
 
 func NewContext() *DIContext {
 	ctx := new(DIContext)
-	ctx.SingletonInstances = make(map[string]any)
-	ctx.SingletonFactories = make(map[string]any)
-	ctx.Factories = make(map[string]any)
+	ctx.singletonInstances = make(map[string]any)
+	ctx.singletonFactories = make(map[string]any)
+	ctx.factories = make(map[string]any)
 
-	ctx.InterfaceSingletonInstances = make(map[string]any)
-	ctx.InterfaceSingletonFactories = make(map[string]any)
-	ctx.InterfaceFactories = make(map[string]any)
+	ctx.interfaceSingletonInstances = make(map[string]any)
+	ctx.interfaceSingletonFactories = make(map[string]any)
+	ctx.interfaceFactories = make(map[string]any)
 	return ctx
 }
 
 func AddSingleton[T any](provider *DIContext, factory func(*DIContext) *T) {
 	tName := getTypeName[T]()
-	provider.SingletonFactories[tName] = factory
+	provider.singletonFactories[tName] = factory
 }
 
 func AddInterfaceSingleton[T any](provider *DIContext, factory func(*DIContext) T) {
 	tName := getTypeName[T]()
-	provider.InterfaceSingletonFactories[tName] = factory
+	provider.interfaceSingletonFactories[tName] = factory
 }
 
 func AddFactory[T any](provider *DIContext, factory func(*DIContext) *T) {
 	tName := getTypeName[T]()
-	provider.Factories[tName] = factory
+	provider.factories[tName] = factory
 }
 
 func AddInterfaceFactory[T any](provider *DIContext, factory func(*DIContext) T) {
 	tName := getTypeName[T]()
-	provider.InterfaceFactories[tName] = factory
+	provider.interfaceFactories[tName] = factory
 }
 
 func GetService[T any](provider *DIContext) *T {
 	tName := getTypeName[T]()
 
-	tGeneric, found := provider.SingletonInstances[tName]
+	tGeneric, found := provider.singletonInstances[tName]
 	if found {
 		t, ok := tGeneric.(*T)
 
@@ -59,18 +59,18 @@ func GetService[T any](provider *DIContext) *T {
 		}
 	}
 
-	serviceFactory, found := provider.SingletonFactories[tName]
+	serviceFactory, found := provider.singletonFactories[tName]
 	if found {
 		tFactory, ok := serviceFactory.(func(*DIContext) *T)
 
 		if ok {
 			t := tFactory(provider)
-			provider.SingletonInstances[tName] = t
+			provider.singletonInstances[tName] = t
 			return t
 		}
 	}
 
-	serviceFactory, found = provider.Factories[tName]
+	serviceFactory, found = provider.factories[tName]
 	if found {
 		tFactory, ok := serviceFactory.(func(*DIContext) *T)
 
@@ -91,7 +91,7 @@ func GetService[T any](provider *DIContext) *T {
 func GetInterfaceService[T any](provider *DIContext) T {
 	tName := getTypeName[T]()
 
-	tGeneric, found := provider.InterfaceSingletonInstances[tName]
+	tGeneric, found := provider.interfaceSingletonInstances[tName]
 	if found {
 		t, ok := tGeneric.(T)
 
@@ -100,18 +100,18 @@ func GetInterfaceService[T any](provider *DIContext) T {
 		}
 	}
 
-	serviceFactory, found := provider.InterfaceSingletonFactories[tName]
+	serviceFactory, found := provider.interfaceSingletonFactories[tName]
 	if found {
 		tFactory, ok := serviceFactory.(func(*DIContext) T)
 
 		if ok {
 			t := tFactory(provider)
-			provider.InterfaceSingletonInstances[tName] = t
+			provider.interfaceSingletonInstances[tName] = t
 			return t
 		}
 	}
 
-	serviceFactory, found = provider.InterfaceFactories[tName]
+	serviceFactory, found = provider.interfaceFactories[tName]
 	if found {
 		tFactory, ok := serviceFactory.(func(*DIContext) T)
 
