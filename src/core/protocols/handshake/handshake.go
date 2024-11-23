@@ -43,28 +43,32 @@ func (host *HandshakeHost) GetNodeAddress() string {
 	return host.keyRepo.GetSelfIdentity().GetAddress()
 }
 
-func (host *HandshakeHost) Greet(nodeAddr string, netAddr string) string {
+// TODO: unify with handshake.Executor
+func (host *HandshakeHost) Greet(otherId string, otherAddr string) string {
 	assembly, _ := messages.Assemble(messages.Hello{
-		DestinationAddress: nodeAddr,
+		DestinationAddress: otherId,
 		SourceAddress:      host.GetNodeAddress(),
 	})
 
-	udpAddr, _ := net.ResolveUDPAddr("udp", netAddr)
+	udpAddr, _ := net.ResolveUDPAddr("udp", otherAddr)
 	data, _ := messages.Encode(assembly)
 	tun := host.udpServer.Tunnel(udpAddr.String())
 	tun.Send(data)
 
+	// TODO: Implement timeout
 	challengePkt := <-tun.ReceivePkt()
+	// TODO: Implement error handling
 	challengeMsg, _ := messages.Decode(challengePkt.Data)
 	challenge, _, _ := messages.Disassemble(challengeMsg)
 
 	nonce := challenge.(*messages.Challenge).Nonce
 
+	// TODO: Implement error handling
 	ephKey, _ := identitykeys.GetECDHCurve().GenerateKey(rand.Reader)
-	nodeId, _ := identities.FromAddress(nodeAddr)
+	nodeId, _ := identities.FromAddress(otherId)
 
 	challengeData := append(nonce, ephKey.PublicKey().Bytes()...)
-	challengeData = append(challengeData, nodeAddr...)
+	challengeData = append(challengeData, otherId...)
 
 	digest := sha256.New()
 	digest.Write(challengeData)

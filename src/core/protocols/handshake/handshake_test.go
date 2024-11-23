@@ -34,4 +34,6 @@ func Test__Hello(t *testing.T) {
 	if secret == "" {
 		t.Error("Handshake failed")
 	}
+
+	t.Logf("Handshake successful, secret: %s", secret)
 }

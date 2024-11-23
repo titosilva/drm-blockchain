@@ -6,9 +6,10 @@ import (
 )
 
 type TcpTunnel struct {
-	conn   net.Conn
-	recv   chan tunnel.Packet
-	closed bool
+	conn        net.Conn
+	recv        chan tunnel.Packet
+	closed      bool
+	closed_chan chan any
 }
 
 func NewTunnel(conn net.Conn) *TcpTunnel {
@@ -38,5 +39,13 @@ func (conn *TcpTunnel) Close() error {
 	}
 
 	conn.closed = true
+	conn.closed_chan <- true
 	return conn.conn.Close()
 }
+
+func (conn *TcpTunnel) WaitClose() <-chan any {
+	return conn.closed_chan
+}
+
+// Static implementation check
+var _ tunnel.Tunnel = (*TcpTunnel)(nil)
